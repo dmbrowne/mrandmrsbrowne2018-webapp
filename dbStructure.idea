@@ -1,0 +1,78 @@
+users {
+  [uid]: {
+    displayName
+    photoUrl
+    emailVerified
+    email
+  }
+}
+photos {
+  [uuid: mediaReference]: {
+    storageReferenceId
+    userId
+  }
+}
+videos {
+  [uuid: mediaReference]: {
+    storageReferenceId
+    userId
+  }
+}
+games {
+  [uuid]: {
+    title: 'I-Spy'
+    description
+    scenrios [
+      {
+        title
+        description
+        media [
+          {
+            userId
+            mediaType: 'video' | 'photo'
+            mediaReference
+          }
+        ]: FirestoreCollection
+      }
+    ]: FirestoreCollection
+  }
+  [uuid]: {
+    title: 'Speech Sweepstakez'
+    description
+    stakes: [
+      {
+        userId
+        time
+        private
+      }
+    ]
+  }
+  bingo: {
+    title: 'Wedding Bingo',
+    description
+    [quotes: Object]: {
+      [uuid]: {
+        description
+      }
+    }
+    cards: {
+      [userId]: [
+        {
+          quoteID: uuid,
+          checked: boolean
+        }
+      ]
+    }
+  }
+}
+feed {
+  [uuid] {
+    userId
+    mediaType: 'video' | 'photo'
+    mediaReference
+    description?
+    gameId?
+    scenarioRef?
+    stakeRef?
+  }
+}
