@@ -6,7 +6,7 @@ import SendIcon from '@material-ui/icons/Send';
 import CancelIcon from '@material-ui/icons/Cancel';
 import * as uuidv4 from 'uuid/v4';
 import MinimalFileUpload from '../components/FileUploadMinimal';
-import { withFirebase } from '../store/firebase';
+import { withFirebase } from '../firebase';
 import { withAuth } from '../store/auth';
 
 
@@ -95,7 +95,6 @@ class NewPost extends React.Component {
 	}
 
 	render() {
-		console.log()
 		const { file, fileType, mediaPreview } = this.state
 		const locationState = this.props.location.state;
 		return (

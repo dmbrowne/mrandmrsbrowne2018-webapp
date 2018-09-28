@@ -6,7 +6,7 @@ import UploadIcon from '@material-ui/icons/CloudUpload';
 import CameraIcon from '@material-ui/icons/Camera';
 import CheckIcon from '@material-ui/icons/Check';
 import CloseIcon from '@material-ui/icons/Close';
-import { withFirebase } from '../store/firebase';
+import { withFirebase } from '../firebase';
 
 class FileUpload extends React.Component {
 	state = {
@@ -123,8 +123,8 @@ class FileUpload extends React.Component {
 						padding: 8px 16px;
 				    overflow: hidden;
 				    position: relative;
-						width: 90%;
-				    height: 200px;
+						/* width: 90%; */
+				    /* height: 200px; */
 				    border: dashed 1px ${this.props.theme.palette.grey['600']};;
 				    display: flex;
 						flex-direction: column;
@@ -134,7 +134,7 @@ class FileUpload extends React.Component {
 					.fileInputLabel [type=file] {
 				    cursor: inherit;
 				    display: block;
-				    font-size: 999px;
+				    /* font-size: 999px; */
 				    filter: alpha(opacity=0);
 				    min-height: 100%;
 				    min-width: 100%;
@@ -143,6 +143,7 @@ class FileUpload extends React.Component {
 				    right: 0;
 				    text-align: right;
 				    top: 0;
+						width: 100%;
 					}
 					.preview {
 						width: 100%;

@@ -24,10 +24,10 @@ export default class AddNewPostButton extends React.Component {
 					.fileInputLabel [type=file] {
 				    cursor: inherit;
 				    display: block;
-				    font-size: 999px;
 				    filter: alpha(opacity=0);
 				    min-height: 100%;
 				    min-width: 100%;
+						width: 100%;
 				    opacity: 0;
 				    position: absolute;
 				    right: 0;

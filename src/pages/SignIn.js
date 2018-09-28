@@ -4,8 +4,7 @@ import * as firebaseui from 'firebaseui';
 import 'firebaseui/dist/firebaseui.css';
 import { Typography } from '@material-ui/core';
 import logo from '../icons/yd-logo.png';
-import bg from "./classic-couple-cup.jpg";
-import { withFirebase } from '../store/firebase';
+import { withFirebase } from '../firebase';
 import { generateIdenticon } from '../utils';
 
 
@@ -75,16 +74,6 @@ class SignIn extends React.Component {
             background: #efefef;
             padding: 32px;
 						min-height: calc(100vh - 64px);
-          }
-          .bg {
-            background: url(${bg}) center center / cover;
-            height: 110vh;
-            width: 110%;
-            position: absolute;
-            top: -5vh;
-            left: -5%;
-            z-index: 0;
-            filter: blur(5px);
           }
           .content {
             position: relative;

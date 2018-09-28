@@ -13,7 +13,8 @@ import ISpy from './ISpy';
 import ISpyScenario from './ISpyScenario';
 import Feed from './Feed';
 import NewPost from './NewPost';
-import { withFirebase } from '../store/firebase';
+import AddScenarioMedia from './AddScenarioMedia';
+import { withFirebase } from '../firebase';
 import { withAuth } from '../store/auth';
 import { width } from 'window-size';
 import { Toolbar, Typography, IconButton } from '@material-ui/core';
@@ -47,15 +48,6 @@ class IndexPage extends React.Component {
 			this.props.history.push("/signin");
 			return null;
 		}
-
-		this.props.firestore.collection('games').get().then(snapshot => {
-			const games = snapshot.docs.map(doc => ({
-				id: doc.id,
-				ref: doc.ref,
-				...doc.data(),
-			}));
-			this.setState({ games });
-		});
 	}
 
 	handleChange = (event: e, value: number) => {
@@ -95,10 +87,11 @@ class IndexPage extends React.Component {
 					</Toolbar>
 				</AppBar>
 				<main>
-						<Route exact path={'/'} component={Feed} />
-						<Route path={'/new-post'} component={NewPost} />
-						<Route path={'/i-spy'} component={ISpy} />
-						<Route path={'/i-spy/:scenarioId'} component={ISpyScenario} />
+					<Route exact path={'/'} component={Feed} />
+					<Route path={'/new-post'} component={NewPost} />
+					<Route exact path={'/i-spy'} component={ISpy} />
+					<Route exact path={'/i-spy/:scenarioId'} component={ISpyScenario} />
+					<Route path={'/i-spy/:scenarioId/add-media'} component={AddScenarioMedia} />
 				</main>
 				{!this.state.hideNavigationTabs &&
 					<BottomNavigation
@@ -109,7 +102,6 @@ class IndexPage extends React.Component {
 					>
 						<BottomNavigationAction label="Recents" icon={<RestoreIcon />} />
 						<BottomNavigationAction label="I-Spy" icon={<FavoriteIcon />} />
-						<BottomNavigationAction label="Bingo" icon={<FavoriteIcon />} />
 					</BottomNavigation>
 				}
 				<style jsx>{appContainerStyles}</style>
@@ -132,11 +124,9 @@ class IndexPage extends React.Component {
 	}
 }
 
-export default withFirebase(
-	withAuth(IndexPage, () => (
-		<div className="app-container">
-			<CircularProgress />
-			<style jsx>{appContainerStyles}</style>
-		</div>
-	))
-);
+export default withAuth(IndexPage, () => (
+	<div className="app-container">
+		<CircularProgress />
+		<style jsx>{appContainerStyles}</style>
+	</div>
+))

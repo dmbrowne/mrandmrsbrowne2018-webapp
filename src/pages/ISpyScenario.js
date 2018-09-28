@@ -1,12 +1,20 @@
 import * as React from 'react';
 import { CircularProgress, Typography, IconButton, Button } from '@material-ui/core';
+import GridList from '@material-ui/core/GridList';
+import GridListTile from '@material-ui/core/GridListTile';
+import GridListTileBar from '@material-ui/core/GridListTileBar';
 import DeleteForever from '@material-ui/icons/DeleteForever';
 import DeleteOutline from '@material-ui/icons/DeleteOutline';
 import Slider from 'react-slick';
+import fscreen from 'fscreen';
 import FileUpload from '../components/FileUpload';
 import ScenarioMediaItem from '../components/ScenarioMediaItem';
-import { withFirebase } from '../store/firebase';
+import FullScreenMedia from '../components/FullScreenMedia';
+import MediaItem from '../components/MediaItem';
+import { withGames } from '../store/games';
+import { withFirebase } from '../firebase';
 import { withAuth } from '../store/auth';
+import NewPostButton from '../components/AddNewPostButton';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -18,28 +26,28 @@ class ISpyScenario extends React.Component {
 		activeSlideIdx: 0,
 	}
 
-	sliderSettings = {
-    dots: true,
-    speed: 500,
-		infinite: false,
-		centerMode: true,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-		arrows: false,
-		// adaptiveHeight:  true,
-		className: 'slide-container',
-		beforeChange: () => this.setState({ activeSlideIdx: null }),
-		afterChange: index => this.setState({ activeSlideIdx: index }),
-  };
+	fullScreenRef = React.createRef();
+	scenarioFirestoreRef = this.props.firestore.doc(
+		`games/ispy/scenarios/${this.props.match.params.scenarioId}`
+	);
 
 	constructor(props) {
 		super(props);
-		const { scenarioId } = props.match.params;
-		this.scenarioFirestoreRef = props.firestore.doc(`games/ispy/scenarios/${scenarioId}`);
+		this.onFullscreenChange = this.onFullscreenChange.bind(this)
+	}
+
+	onFullscreenChange(e) {
+		if (fscreen.fullscreenElement !== null) {
+		   console.log('Entered fullscreen mode');
+		 } else {
+		   console.log('Exited fullscreen mode');
+			 this.setState({ fullscreenMedia: null })
+		 }
 	}
 
 	componentDidMount() {
 		this.subscribeToUserMediaForActiveScenario();
+		fscreen.addEventListener('fullscreenchange', this.onFullscreenChange);
 		this.scenarioFirestoreRef.get().then(snapshot => {
 			const scenario = {
 				id: snapshot.id,
@@ -48,6 +56,10 @@ class ISpyScenario extends React.Component {
 			};
 			this.setState({ scenario });
 		});
+	}
+
+	componentWillUnmount() {
+		fscreen.removeEventListener('fullscreenchange', this.onFullscreenChange);
 	}
 
 	subscribeToUserMediaForActiveScenario() {
@@ -64,28 +76,6 @@ class ISpyScenario extends React.Component {
 			})
 	}
 
-	createFirestorePhotoDocument(storageReferenceId) {
-		const photoCollectionRef = this.props.firestore.collection('photos');
-		return photoCollectionRef.doc(storageReferenceId).set({
-			userId: this.props.auth.user.uid,
-			storageReferenceId,
-		})
-		.then(() => {
-			return photoCollectionRef.doc(storageReferenceId)
-		})
-	}
-
-	createFirestoreVideoDocument(storageReferenceId) {
-		const videoCollectionRef = this.props.firestore.collection('videos');
-		return videoCollectionRef.doc(storageReferenceId).set({
-			userId: this.props.auth.user.uid,
-			storageReferenceId,
-		})
-		.then(() => {
-			return videoCollectionRef.doc(storageReferenceId)
-		})
-	}
-
 	createGameScenarioMedia(mediaType, photoOrVideoReference) {
 		const scenarioMediaRef = this.scenarioFirestoreRef.collection('media');
 		return scenarioMediaRef.doc(photoOrVideoReference.id).set({
@@ -100,25 +90,25 @@ class ISpyScenario extends React.Component {
 			userId: this.props.auth.user.uid,
 			mediaType,
 			mediaReference: photoOrVideoReference,
-			gameId: this.props.firestore.doc('games/ispy'),
-			scenarioRef: this.scenarioFirestoreRef,
+			gameReference: this.props.firestore.doc('games/ispy'),
+			scenarioReference: this.scenarioFirestoreRef,
 		})
 	}
 
 	onUploadSuccess = async (uploadedMediaSnapshot) => {
+		const addMessage = this.props.firebase.functions().httpsCallable('addMedia');
 		const { contentType } = uploadedMediaSnapshot.metadata;
 		const storageReferenceId =  uploadedMediaSnapshot.metadata.name;
-
+		const {data: newMedia} = await addMessage({ storageReference: storageReferenceId });
 		if (!contentType.includes('video') && !contentType.includes('image')) {
 			return;
 		}
 
-		const mediaType = contentType.includes('video') ? 'video' : 'image'
-		const photoOrVideoReference = mediaType === 'video'
-			? await this.createFirestoreVideoDocument(storageReferenceId)
-			: await this.createFirestorePhotoDocument(storageReferenceId);
-		await this.createGameScenarioMedia(mediaType, photoOrVideoReference);
-		await this.addNewFeedPost(mediaType, photoOrVideoReference);
+		const collection = contentType.includes('video') ? 'videos' : 'photos';
+		const ref = this.props.firestore.collection(collection).doc(newMedia.id);
+		const mediaType = contentType.includes('video') ? 'video' : 'image';
+		await this.createGameScenarioMedia(mediaType, ref);
+		await this.addNewFeedPost(mediaType, ref);
 	}
 
 	onRemoveMediaFromScenario = (mediaDocument) => {
@@ -153,6 +143,22 @@ class ISpyScenario extends React.Component {
 		return videoCollectionRef.doc(mediaDocument.storageReferenceId).delete()
 	}
 
+	viewFullScreen(mediaDocument) {
+		fscreen.requestFullscreen(this.fullScreenRef.current);
+		this.setState({ fullscreenMedia: mediaDocument })
+	}
+
+	onAddFile = (file, fileType) => {
+		this.props.history.push({
+			pathname: `${this.props.match.url}/add-media`,
+			state: {
+				file,
+				fileType,
+				hideNavigationTabs: true,
+			}
+		})
+	}
+
 	render() {
 		const { scenarioMedia, scenario } = this.state;
 
@@ -162,82 +168,103 @@ class ISpyScenario extends React.Component {
 
 		return (
 			<div className="ispyScenario">
-				<Typography variant="title">{scenario.title}</Typography>
-				<Typography>{scenario.description}</Typography>
-				<div className="sliderContainer">
-					<Slider {...this.sliderSettings}>
-						{scenarioMedia.length <=4 &&
-							<div key={'upload-new-media'}>
-								<div className="mediaItemContainer">
-									<FileUpload onUploadSuccess={this.onUploadSuccess} />
-								</div>
-							</div>
-						}
-						{scenarioMedia && scenarioMedia.map((media, idx) =>
-							<div key={media.id}>
-								<div className="mediaItemContainer">
-									<ScenarioMediaItem
-										mediaReference={media.mediaReference}
-										mediaType={media.mediaType}
-										isActive={this.state.activeSlideIdx === idx + 1}
-										onActive={activeMediaDocument => this.setState({ activeMediaDocument })}
-									/>
-								</div>
-							</div>
-						)}
-					</Slider>
+				<header>
+					<Typography variant="title">{scenario.title}</Typography>
+					{scenario.description && <Typography>{scenario.description}</Typography>}
+				</header>
+				<div className="relative-container">
+					<div className="top">
+						<Typography variant="body2">Add up to a total of 3 photos or videos</Typography>
+						<div
+							style={{
+								display: 'flex',
+								flexWrap: 'wrap',
+								justifyContent: 'space-around',
+								overflow: 'hidden',
+							}}
+						>
+							<GridList cellHeight={250} style={{transform: 'translateZ(0)', flexWrap: 'noWrap'}} cols={1.5}>
+								<FileUpload onUploadSuccess={this.onUploadSuccess} />
+								{scenarioMedia && scenarioMedia.map((media, idx) =>
+									<GridListTile
+										key={media.id}
+										className="mediaItemContainer"
+										onClick={e => this.viewFullScreen(media)}
+									>
+										<ScenarioMediaItem
+											mediaReference={media.mediaReference}
+											mediaType={media.mediaType}
+										/>
+									</GridListTile>
+								)}
+							</GridList>
+						</div>
+					</div>
+					<div className="body">
+						<div className="content-scroll">
+							<div className="content"></div>
+						</div>
+					</div>
 				</div>
-				<section className="info">
-					{this.state.activeSlideIdx === 0 && (
-						<Typography>Add new media</Typography>
-					)}
-					{this.state.activeSlideIdx > 0 && (
-						<React.Fragment>
-							<div className="action">
-								<Button
-									color="primary"
-									size="small"
-									style={{ marginLeft: -8 }}
-									onClick={e => this.onRemoveMediaFromScenario()}
-								>
-									Remove
-								</Button>
-								<Typography variant="caption">This will remove the above item from your scenario entry, but keep it visible in the everyone's feed</Typography>
-							</div>
-							<div className="action">
-								<Button
-									color="secondary"
-									size="small"
-									style={{ marginLeft: -8 }}
-									onClick={e => this.onDeleteMedia()}
-								>
-									Delete
-								</Button>
-								<Typography variant="caption">This will delete the image from your scenario entry and delete it everywhere else!</Typography>
-							</div>
-						</React.Fragment>
-					)}
-				</section>
+				<div id="fullscreen" ref={this.fullScreenRef}>
+					{this.state.fullscreenMedia &&
+						<FullScreenMedia
+							mediaReference={this.state.fullscreenMedia.ref}
+							mediaType={this.state.fullscreenMedia.mediaType}
+						/>
+					}
+				</div>
+				<div className="add-scenario-media">
+					<NewPostButton onFileChange={this.onAddFile} />
+				</div>
+				<style jsx>{`
+					.add-scenario-media {
+						position: fixed;
+						bottom: 72px;
+						right: 24px;
+						z-index: 100;
+					}
+				`}</style>
 				<style jsx>{`
 					video, img { max-width: 100%; max-height: 100%; }
-					.mediaItemContainer {
-						padding: 25px 20px;
+					.ispyScenario {
 						display: flex;
-						align-items: center;
-						justify-content: center;
+						flex-direction: column;
+						height: calc(100vh - 112px);
 					}
-					.sliderContainer {
-						padding-bottom: 40px;
+					.relative-container {
+						position: relative;
+						overflow: hidden;
+						height: 100%;
+						flex-grow: 1;
 					}
-					.info {
-						padding: 0 24px;
+					.top {
+						position: absolute;
+				    top: 0;
+				    left: 0;
+				    width: 100%;
+						z-index: 1;
+					}
+					.body {
+						height:100%;
+						overflow: auto;
+					}
+					.content-scroll {
+						padding-top: 250px;
+						height: 100%;
+					}
+					.content {
+						position: relative;
+						z-index: 2;
+						background: #fff;
+						min-height: 100%;
+					}
+					.ispyScenario :global(.mediaItemContainer img),
+					.ispyScenario :global(.mediaItemContainer video) {
+						height: 100%;
 					}
 					.action {
 						margin-bottom: 24px;
-					}
-					.ispyScenario :global(.slick-track) {
-						display: flex;
-						align-items: center;
 					}
 				`}</style>
 			</div>

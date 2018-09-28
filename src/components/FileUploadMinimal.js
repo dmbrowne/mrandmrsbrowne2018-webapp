@@ -6,7 +6,7 @@ import UploadIcon from '@material-ui/icons/CloudUpload';
 import CameraIcon from '@material-ui/icons/Camera';
 import CheckIcon from '@material-ui/icons/Check';
 import CloseIcon from '@material-ui/icons/Close';
-import { withFirebase } from '../store/firebase';
+import { withFirebase } from '../firebase';
 
 class FileUpload extends React.Component {
 	state = {

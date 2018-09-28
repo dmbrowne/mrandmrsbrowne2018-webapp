@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { withAuth } from '../store/auth';
-import { withFirebase } from '../store/firebase';
+import { withFirebase } from '../firebase';
 import {
 	Button,
 	Avatar,

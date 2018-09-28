@@ -1,6 +1,6 @@
 import React from 'react';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { withFirebase } from './firebase';
+import { withFirebase } from '../firebase';
 const defaultState = {
 	user: null,
 }
@@ -8,7 +8,7 @@ const defaultState = {
 const Context = React.createContext({ ...defaultState })
 export default Context;
 
-class AuthContext extends React.Component {
+class AuthContextProvider extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -26,25 +26,24 @@ class AuthContext extends React.Component {
 	}
 
 	render() {
-		const { Component, LoadingComponent } = this.props;
-
-		if (LoadingComponent && this.state.fetchingUser) {
-			return <LoadingComponent />
+		if (this.state.fetchingUser) {
+			return <CircularProgress />
 		}
 
 		return (
-			<Component {...this.props} auth={this.state} />
+			<Context.Provider value={this.state}>
+				{this.props.children}
+			</Context.Provider>
 		)
 	}
 }
+export const AuthProvider = withFirebase(AuthContextProvider);
 
-export function withAuth(Component, LoadingComponent) {
+export function withAuth(Component) {
 	return function ComponentWrappedWithFirestore(props) {
-		const AuthComponent = withFirebase(AuthContext);
-		
 		return (
 			<Context.Consumer>
-				{context => <AuthComponent {...props} Component={Component} LoadingComponent={LoadingComponent} />}
+				{context => <Component {...props} auth={context} />}
 			</Context.Consumer>
 		)
 	}

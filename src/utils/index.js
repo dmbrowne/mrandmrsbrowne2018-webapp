@@ -14,3 +14,11 @@ export function debounce(func, delay) {
     inDebounce = setTimeout(() => func.apply(context, args), delay)
   }
 }
+
+export function compose(...composers) {
+	return function WrapComposedComponent(Component) {
+		return composers.reduce((WrappedComponent, composer) =>
+			composer(WrappedComponent)
+		, Component)
+	}
+}

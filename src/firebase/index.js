@@ -2,17 +2,21 @@ import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
 import 'firebase/storage';
+import 'firebase/functions';
 import config from './config.json';
+import { withFirebase as firebaseConsumerHoc } from './context';
 
-export default function () {
-	firebase.initializeApp({
-		apiKey: config.apiKey,
-		authDomain: config.authDomain,
-		projectId: config.projectId,
-		storageBucket: config.storageBucket,
-	});
-	return firebase;
-}
+firebase.initializeApp({
+	apiKey: config.apiKey,
+	authDomain: config.authDomain,
+	projectId: config.projectId,
+	storageBucket: config.storageBucket,
+});
+
+export default firebase;
+export const firestore = createFirestore(firebase);
+export const firebaseStorage = firebase.storage();
+export const firebaseFunctions = firebase.functions();
 
 export function createFirestore(firebaseInst) {
 	const firestore = firebaseInst.firestore();
@@ -34,3 +38,5 @@ export function createFirestore(firebaseInst) {
 		});
 	return firestore;
 }
+
+export const withFirebase = firebaseConsumerHoc;
