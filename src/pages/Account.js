@@ -51,16 +51,6 @@ class Account extends React.Component {
 		const { auth: { user } } = this.props;
 		return (
 			<div className="account">
-				<AppBar position="fixed">
-					<Toolbar>
-						<Link className="toolbar-link" to="/">
-							<IconButton color="inherit">
-								<ArrowBackIos />
-							</IconButton>
-							<Typography variant="title" color="inherit" style={{ flexGrow: 1 }}>The App</Typography>
-						</Link>
-					</Toolbar>
-				</AppBar>
 				<div>
 					<img className="avatar" src={user.photoURL} />
 				</div>
@@ -119,9 +109,5 @@ class Account extends React.Component {
 }
 
 export default withFirebase(
-	withAuth(Account, () => (
-		<div>
-			<CircularProgress />
-		</div>
-	))
+	withAuth(Account)
 );

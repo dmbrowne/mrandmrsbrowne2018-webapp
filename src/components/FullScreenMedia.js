@@ -21,7 +21,6 @@ export default class FullScreenMedia extends React.Component {
 		if (window.confirm(this.removeContent())) {
 			this.props.onRemove(this.props.mediaReference);
 			this.setState({ dialogOpen: false })
-		} else {
 		}
 	}
 
@@ -29,7 +28,6 @@ export default class FullScreenMedia extends React.Component {
 		if (window.confirm(this.deleteContent())) {
 			this.props.onDelete(this.props.mediaReference);
 			this.setState({ dialogOpen: false })
-		} else {
 		}
 	}
 
@@ -42,9 +40,8 @@ export default class FullScreenMedia extends React.Component {
 						mediaType={this.props.mediaType}
 					/>
 					<nav className="actions">
-						<div className="action">
+						{/* <div className="action">
 							<Button
-								color="primary"
 								size="small"
 								style={{ color: '#fff' }}
 								onClick={this.removeConfirmation}
@@ -52,10 +49,9 @@ export default class FullScreenMedia extends React.Component {
 								Remove
 							</Button>
 							<Typography variant="caption"></Typography>
-						</div>
+						</div> */}
 						<div className="action">
 							<Button
-								color="secondary"
 								size="small"
 								style={{ color: '#fff' }}
 								onClick={this.deleteConfirmation}
@@ -85,6 +81,7 @@ export default class FullScreenMedia extends React.Component {
 						bottom: 0;
 						left: 0;
 						display: flex;
+						justify-content: space-between;
 					}
 				`}</style>
 			</div>

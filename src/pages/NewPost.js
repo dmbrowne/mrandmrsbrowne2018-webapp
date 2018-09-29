@@ -19,6 +19,13 @@ class NewPost extends React.Component {
 		fileType: this.props.location.state && this.props.location.state.fileType || null,
 	}
 
+	componentWillMount() {
+		this.props.appActions.setAppBarNext({
+			text: 'Post',
+			onClick: () => this.createNewPost(),
+		})
+	}
+
 	upload = () => {
 		const ref = uuidv4().split('-').join('');
 		return this.props.firebaseStorage.ref().child(ref).put(this.state.file);
@@ -29,45 +36,18 @@ class NewPost extends React.Component {
 			userId: this.props.auth.user.uid,
 			mediaType: this.state.fileType === 'image' ? 'photo' : 'video',
 			mediaReference: photoOrVideoReference,
-			description: this.state.caption,
+			caption: this.state.caption,
 			headline: this.state.headline,
 		})
 	}
 
-	createFirestorePhotoDocument(storageReferenceId) {
-		const photoCollectionRef = this.props.firestore.collection('photos');
-		return photoCollectionRef.doc(storageReferenceId).set({
-			userId: this.props.auth.user.uid,
-			storageReferenceId,
-		})
-		.then(() => {
-			return photoCollectionRef.doc(storageReferenceId)
-		})
-	}
-
-	createFirestoreVideoDocument(storageReferenceId) {
-		const videoCollectionRef = this.props.firestore.collection('videos');
-		return videoCollectionRef.doc(storageReferenceId).set({
-			userId: this.props.auth.user.uid,
-			storageReferenceId,
-		})
-		.then(() => {
-			return videoCollectionRef.doc(storageReferenceId)
-		})
-	}
-
 	onUploadSuccess = async (uploadedMediaSnapshot) => {
+		const addMedia = this.props.firebaseFunctions.httpsCallable('addMedia');
 		const { contentType } = uploadedMediaSnapshot.metadata;
 		const storageReferenceId =  uploadedMediaSnapshot.metadata.name;
-
-		if (!contentType.includes('video') && !contentType.includes('image')) {
-			return;
-		}
-
-		const mediaType = contentType.includes('video') ? 'video' : 'image'
-		const photoOrVideoReference = mediaType === 'video'
-			? await this.createFirestoreVideoDocument(storageReferenceId)
-			: await this.createFirestorePhotoDocument(storageReferenceId);
+		const {data: newMedia} = await addMedia({ storageReference: storageReferenceId });
+		const collection = contentType.includes('video') ? 'videos' : 'photos';
+		const photoOrVideoReference = this.props.firestore.doc(`${collection}/${newMedia.id}`)
 		await this.savePostData(photoOrVideoReference);
 	}
 
@@ -99,20 +79,6 @@ class NewPost extends React.Component {
 		const locationState = this.props.location.state;
 		return (
 			<div className="root">
-				<div className="controls">
-					<Button
-						variant="text"
-						style={{ color: this.props.theme.palette.error.dark}}
-						onClick={this.onCancel}
-					>
-						<CancelIcon />
-						Cancel
-					</Button>
-					<Button variant="text" color="primary" onClick={this.createNewPost}>
-						Post
-						<SendIcon />
-					</Button>
-				</div>
 				<div className="content">
 					<div className="head-row">
 						<div className="preview-container">

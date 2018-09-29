@@ -39,10 +39,10 @@ export default class FeedCard extends React.Component {
 						mediaReference={this.props.mediaReference}
 						mediaType={this.props.mediaType}
 					/>
-					{this.props.description &&
+					{this.props.caption &&
 						<CardContent>
 							<Typography component="p">
-								{this.props.description}
+								{this.props.caption}
 							</Typography>
 						</CardContent>
 					}
@@ -61,10 +61,6 @@ export default class FeedCard extends React.Component {
 						max-width: 100%;
 						max-height: 100%;
 					}
-					/* .feedcard.game {
-						margin-right: 16px;
-						margin-left: 16px;
-					} */
 				`}</style>
 			</div>
 		)

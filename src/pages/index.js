@@ -1,44 +1,27 @@
-// @flow
 import React from 'react';
-import { Route, Switch } from 'react-router-dom';
-import css from 'styled-jsx/css'
-import AppBar from '@material-ui/core/AppBar';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import BottomNavigation from '@material-ui/core/BottomNavigation';
-import BottomNavigationAction from '@material-ui/core/BottomNavigationAction';
-import RestoreIcon from '@material-ui/icons/Restore';
-import FavoriteIcon from '@material-ui/icons/Favorite';
-import AccountBox from '@material-ui/icons/AccountBox';
+import { Route } from 'react-router-dom';
 import ISpy from './ISpy';
 import ISpyScenario from './ISpyScenario';
 import Feed from './Feed';
 import NewPost from './NewPost';
 import AddScenarioMedia from './AddScenarioMedia';
+import Account from './Account';
 import { withFirebase } from '../firebase';
 import { withAuth } from '../store/auth';
-import { width } from 'window-size';
-import { Toolbar, Typography, IconButton } from '@material-ui/core';
-
-const appContainerStyles = css`
-	.app-container {
-		padding-bottom: 56px;
-	}
-
-	.app-container :global(.tab-navigation) {
-		height: 56px;
-		width: 100%;
-		position: fixed;
-		bottom: 0;
-	}
-`;
+import Appbar from '../components/AppBar';
+import BottomTabNavigation from '../components/TabNavigation';
 
 class IndexPage extends React.Component {
 	static tabs = [
 		'/',
 		'/i-spy',
+		'/me',
 	]
 
 	state = {
+		appBarTitle: 'Mr. & Mrs. Browne',
+		nextComponent: null,
+		onBack: null,
 		hideNavigationTabs: false,
 		currentTab: IndexPage.tabs.indexOf(this.props.location.pathname),
 	}
@@ -50,16 +33,20 @@ class IndexPage extends React.Component {
 		}
 	}
 
-	handleChange = (event: e, value: number) => {
-    this.setState({ currentTab: value });
+	handleChange = (event, value) => {
+		this.setState({ currentTab: value });
+		this.props.history.push(IndexPage.tabs[value])
 	};
 
-	componentDidUpdate(prevProps, prevState) {
-		const { currentTab } = this.state;
-		const locationState = this.props.location.state;
-		if (prevState.currentTab !== currentTab) {
-			this.props.history.push(IndexPage.tabs[currentTab])
+	componentWillUpdate(nextProps) {
+		if (this.props.location.pathname !== nextProps.location.pathname) {
+			this.setState({ appBarTitle: 'Mr. & Mrs. Browne', nextComponent: null, onBack: null })
 		}
+	}
+
+	componentDidUpdate(prevProps, prevState) {
+		const locationState = this.props.location.state;
+
 		if (locationState && locationState.hideNavigationTabs) {
 			if (!prevState.hideNavigationTabs) {
 				this.setState({ hideNavigationTabs: true })
@@ -71,49 +58,77 @@ class IndexPage extends React.Component {
 		}
 	}
 
+	setAppBarNext = (component) => {
+		this.setState({ nextComponent: component })
+	}
+
+	currentRouteIsATabRoute() {
+		return IndexPage.tabs.some(tab => tab === this.props.location.pathname);
+	}
+
 	render() {
 		if (this.props.auth.user === null) {
       return null;
 		}
 
+		const appActions = {
+			setAppBarTitle: this.setAppBarTitle,
+			setAppBarNext: this.setAppBarNext,
+		}
+
 		return (
 			<div className="app-container">
-				<AppBar position="fixed">
-					<Toolbar>
-						<Typography variant="title" color="inherit" style={{ flexGrow: 1 }}>The App</Typography>
-						<IconButton color="inherit" onClick={() => this.props.history.push('/me')}>
-							<img src={this.props.auth.user.photoURL} className="toolbar-avatar"/>
-						</IconButton>
-					</Toolbar>
-				</AppBar>
+				<Appbar
+					appBarTitle={this.state.appBarTitle}
+					showBackButton={!this.currentRouteIsATabRoute()}
+					nextComponent={this.state.nextComponent}
+				/>
 				<main>
-					<Route exact path={'/'} component={Feed} />
-					<Route path={'/new-post'} component={NewPost} />
-					<Route exact path={'/i-spy'} component={ISpy} />
-					<Route exact path={'/i-spy/:scenarioId'} component={ISpyScenario} />
-					<Route path={'/i-spy/:scenarioId/add-media'} component={AddScenarioMedia} />
+					<Route
+						exact
+						path={'/'}
+						render={props => <Feed {...props} appActions={appActions} />}
+					/>
+					<Route
+						path={'/new-post'}
+						render={props => <NewPost {...props} appActions={appActions} />}
+					/>
+					<Route
+						exact
+						path={'/i-spy'}
+						render={props => <ISpy {...props} appActions={appActions} />}
+					/>
+					<Route
+						exact
+						path={'/me'}
+						render={props => <Account {...props} appActions={appActions} />}
+					/>
+					<Route
+						exact
+						path={'/i-spy/:scenarioId'}
+						render={props => <ISpyScenario {...props} appActions={appActions} />}
+					/>
+					<Route
+						path={'/i-spy/:scenarioId/add-media'}
+						render={props => <AddScenarioMedia {...props} appActions={appActions} />}
+					/>
 				</main>
 				{!this.state.hideNavigationTabs &&
-					<BottomNavigation
+					<BottomTabNavigation
 						className="tab-navigation"
 						value={this.state.currentTab}
 						onChange={this.handleChange}
-						showLabels
-					>
-						<BottomNavigationAction label="Recents" icon={<RestoreIcon />} />
-						<BottomNavigationAction label="I-Spy" icon={<FavoriteIcon />} />
-					</BottomNavigation>
+					/>
 				}
-				<style jsx>{appContainerStyles}</style>
 				<style jsx>{`
-				.app-container {
-					padding-bottom: ${this.state.hideNavigationTabs ? '0px' : '56px'};
-				}
-				`}</style>
-				<style jsx>{`
-					.toolbar-avatar {
-						width: 80%;
-						border-radius: 50%;
+					.app-container {
+						padding-bottom: ${this.state.hideNavigationTabs ? '0px' : '56px'};
+					}
+					.app-container :global(.tab-navigation) {
+						height: 56px;
+						width: 100%;
+						position: fixed;
+						bottom: 0;
 					}
 					main {
 						margin-top: 56px;
@@ -124,9 +139,4 @@ class IndexPage extends React.Component {
 	}
 }
 
-export default withAuth(IndexPage, () => (
-	<div className="app-container">
-		<CircularProgress />
-		<style jsx>{appContainerStyles}</style>
-	</div>
-))
+export default withAuth(IndexPage)

@@ -5,16 +5,19 @@ const Context = React.createContext({
 	gamesById: {},
 	scenariosById: {},
 	scenariosByGame: {},
+	otherUserMedia: {},
 	getGame: () => {},
 	getGameScenarios: () => {},
 	fetchScenario: () => {},
+	fetchScenarioMediaByOtherUsers: () => {},
 });
 
 class GamesProviderComponent extends React.Component {
 	state = {
 		games: {},
 		scenariosById: {},
-		scenariosByGame: {}
+		scenariosByGame: {},
+		otherUserMedia: {},
 	}
 
 	getGame = (gameUuid) => {
@@ -86,6 +89,33 @@ class GamesProviderComponent extends React.Component {
 			})
 	}
 
+	fetchScenarioMediaByOtherUsers(gameId, scenarioId, excludingUserId, after) {
+		let ref = this.props.firestore
+			.doc(`games/${gameId}`)
+			.doc(`scenarios/${scenarioId}`)
+			.collection('media')
+			.where('userId', '!=', excludingUserId)
+			.orderBy('createdAt', 'desc')
+
+		if (after) {
+			ref = ref.startAfter(after);
+		}
+
+		ref.limit(10);
+
+		ref.get().then(snapshot => {
+			const medias = snapshot.docs.map(snap => ({ ...snap, ...snap.data() }));
+			this.setState({
+				otherUserMedia: {
+					[scenarioId]: [
+						...this.state.otherUserMedia[scenarioId] || [],
+						...medias,
+					],
+				}
+			})
+		})
+	}
+
 	render() {
 		const { Component } = this.props;
 		return (
@@ -93,9 +123,11 @@ class GamesProviderComponent extends React.Component {
 				gamesById: this.state.games,
 				scenariosById: this.state.scenariosById,
 				scenariosByGame: this.state.scenariosByGame,
+				otherUserMedia: this.state.otherUserMedia,
 				getGame: this.getGame,
 				getGameScenarios: this.getGameScenarios,
 				fetchScenario: this.fetchScenario,
+				fetchScenarioMediaByOtherUsers: this.fetchScenarioMediaByOtherUsers,
 			}}>
 				{this.props.children}
 			</Context.Provider>

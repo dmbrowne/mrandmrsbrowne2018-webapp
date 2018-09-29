@@ -25,11 +25,20 @@ class ISpyScenario extends React.Component {
 		`games/ispy/scenarios/${this.props.match.params.scenarioId}`
 	);
 
+	componentWillMount() {
+		this.props.appActions.setAppBarNext({
+			text: 'Post',
+			onClick: () => this.create(),
+		})
+	}
+
 	componentDidMount() {
+		const { scenarioId } = this.props.match.params;
 		const scenario = this.getScenario()
 		if (!scenario) {
-			this.props.games.fetchScenario('ispy', this.props.match.params.scenarioId);
+			this.props.games.fetchScenario('ispy', scenarioId);
 		}
+		this.props.games.fetchScenarioMediaByOtherUsers('ispy', scenarioId, this.props.auth.user.uid);
 	}
 
 	async create() {
@@ -43,6 +52,7 @@ class ISpyScenario extends React.Component {
 			: this.props.firestore.doc(`photos/${newMedia.id}`)
 		await this.createGameScenarioMedia(mediaType, mediaReference);
 		await this.addNewFeedPost(mediaType, mediaReference);
+		this.props.history.goBack();
 	}
 
 	upload = () => {
@@ -98,19 +108,6 @@ class ISpyScenario extends React.Component {
 
 		return (
 			<div className="add-scenario-media-root">
-				<div className="controls">
-					<Button
-						variant="text"
-						onClick={this.onCancel}
-					>
-						<CancelIcon />
-						Cancel
-					</Button>
-					<Button variant="text" color="primary" onClick={this.createNewPost}>
-						Post
-						<SendIcon />
-					</Button>
-				</div>
 				<header>
 					<Typography variant="title">{scenario.title}</Typography>
 				</header>
@@ -130,7 +127,7 @@ class ISpyScenario extends React.Component {
 						</MinimalFileUpload>
 					</div>
 					<TextField
-						label="Caption this"
+						label="Add a caption"
 						placeholder="caption"
 						helperText="optional"
 						fullWidth
@@ -143,7 +140,6 @@ class ISpyScenario extends React.Component {
 				<style jsx>{`
 					.add-scenario-media-root {
 						position: relative;
-						padding-top: 56px;
 					}
 					.media-preview img, video {
 						width: 100%;

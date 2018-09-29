@@ -1,22 +1,16 @@
 import * as React from 'react';
 import { CircularProgress, Typography, IconButton, Button } from '@material-ui/core';
+import Paper from '@material-ui/core/Paper';
 import GridList from '@material-ui/core/GridList';
 import GridListTile from '@material-ui/core/GridListTile';
 import GridListTileBar from '@material-ui/core/GridListTileBar';
-import DeleteForever from '@material-ui/icons/DeleteForever';
-import DeleteOutline from '@material-ui/icons/DeleteOutline';
-import Slider from 'react-slick';
 import fscreen from 'fscreen';
-import FileUpload from '../components/FileUpload';
 import ScenarioMediaItem from '../components/ScenarioMediaItem';
 import FullScreenMedia from '../components/FullScreenMedia';
-import MediaItem from '../components/MediaItem';
 import { withGames } from '../store/games';
 import { withFirebase } from '../firebase';
 import { withAuth } from '../store/auth';
 import NewPostButton from '../components/AddNewPostButton';
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
 
 class ISpyScenario extends React.Component {
 	state = {
@@ -37,12 +31,9 @@ class ISpyScenario extends React.Component {
 	}
 
 	onFullscreenChange(e) {
-		if (fscreen.fullscreenElement !== null) {
-		   console.log('Entered fullscreen mode');
-		 } else {
-		   console.log('Exited fullscreen mode');
-			 this.setState({ fullscreenMedia: null })
-		 }
+		if (fscreen.fullscreenElement === null) {
+			this.setState({ fullscreenMedia: null })
+		}
 	}
 
 	componentDidMount() {
@@ -76,71 +67,22 @@ class ISpyScenario extends React.Component {
 			})
 	}
 
-	createGameScenarioMedia(mediaType, photoOrVideoReference) {
-		const scenarioMediaRef = this.scenarioFirestoreRef.collection('media');
-		return scenarioMediaRef.doc(photoOrVideoReference.id).set({
-			userId: this.props.auth.user.uid,
-			mediaType,
-			mediaReference: photoOrVideoReference,
-		});
-	}
-
-	addNewFeedPost(mediaType, photoOrVideoReference) {
-		return this.props.firestore.collection('feed').add({
-			userId: this.props.auth.user.uid,
-			mediaType,
-			mediaReference: photoOrVideoReference,
-			gameReference: this.props.firestore.doc('games/ispy'),
-			scenarioReference: this.scenarioFirestoreRef,
-		})
-	}
-
-	onUploadSuccess = async (uploadedMediaSnapshot) => {
-		const addMessage = this.props.firebase.functions().httpsCallable('addMedia');
-		const { contentType } = uploadedMediaSnapshot.metadata;
-		const storageReferenceId =  uploadedMediaSnapshot.metadata.name;
-		const {data: newMedia} = await addMessage({ storageReference: storageReferenceId });
-		if (!contentType.includes('video') && !contentType.includes('image')) {
-			return;
-		}
-
-		const collection = contentType.includes('video') ? 'videos' : 'photos';
-		const ref = this.props.firestore.collection(collection).doc(newMedia.id);
-		const mediaType = contentType.includes('video') ? 'video' : 'image';
-		await this.createGameScenarioMedia(mediaType, ref);
-		await this.addNewFeedPost(mediaType, ref);
-	}
-
 	onRemoveMediaFromScenario = (mediaDocument) => {
-		mediaDocument = mediaDocument || this.state.activeMediaDocument;
 		return this.scenarioFirestoreRef.collection(`media`).doc(mediaDocument.id).delete();
 	}
 
-	onDeleteMedia = () => {
-		const mediaDocument = this.state.activeMediaDocument;
-		const deleteDocument = mediaDocument.mediaType === 'video'
-			? this.deleteVideoDocument
-			: this.deletePhotoDocument
-		this.onRemoveMediaFromScenario(mediaDocument);
-		this.deleteStorage(mediaDocument);
-		deleteDocument.call(this, mediaDocument);
+	onDeleteMedia = async (scenarioMediaDocument) => {
+		const scenarioMediaSnapshot = await scenarioMediaDocument.get();
+		const mediaSnapshot = await scenarioMediaSnapshot.data().mediaReference.get();
+		this.onRemoveMediaFromScenario(scenarioMediaDocument);
+		this.deleteStorage(mediaSnapshot.data());
 	}
 
 	deleteStorage(mediaDocument) {
 		return this.props.firebaseStorage
-		.ref()
-		.child(mediaDocument.storageReferenceId)
-		.delete()
-	}
-
-	deletePhotoDocument(mediaDocument) {
-		const photoCollectionRef = this.props.firestore.collection('photos');
-		return photoCollectionRef.doc(mediaDocument.storageReferenceId).delete()
-	}
-
-	deleteVideoDocument(mediaDocument) {
-		const videoCollectionRef = this.props.firestore.collection('videos');
-		return videoCollectionRef.doc(mediaDocument.storageReferenceId).delete()
+			.ref()
+			.child(mediaDocument.storageReference)
+			.delete()
 	}
 
 	viewFullScreen(mediaDocument) {
@@ -184,7 +126,6 @@ class ISpyScenario extends React.Component {
 							}}
 						>
 							<GridList cellHeight={250} style={{transform: 'translateZ(0)', flexWrap: 'noWrap'}} cols={1.5}>
-								<FileUpload onUploadSuccess={this.onUploadSuccess} />
 								{scenarioMedia && scenarioMedia.map((media, idx) =>
 									<GridListTile
 										key={media.id}
@@ -202,7 +143,8 @@ class ISpyScenario extends React.Component {
 					</div>
 					<div className="body">
 						<div className="content-scroll">
-							<div className="content"></div>
+							<Paper elevation={3} className="content">
+							</Paper>
 						</div>
 					</div>
 				</div>
@@ -211,6 +153,7 @@ class ISpyScenario extends React.Component {
 						<FullScreenMedia
 							mediaReference={this.state.fullscreenMedia.ref}
 							mediaType={this.state.fullscreenMedia.mediaType}
+							onDelete={this.onDeleteMedia}
 						/>
 					}
 				</div>
@@ -237,6 +180,7 @@ class ISpyScenario extends React.Component {
 						overflow: hidden;
 						height: 100%;
 						flex-grow: 1;
+						background: #f4f4f4;
 					}
 					.top {
 						position: absolute;
@@ -253,7 +197,7 @@ class ISpyScenario extends React.Component {
 						padding-top: 250px;
 						height: 100%;
 					}
-					.content {
+					.content-scroll :global(.content) {
 						position: relative;
 						z-index: 2;
 						background: #fff;
