@@ -89,35 +89,41 @@ class GamesProviderComponent extends React.Component {
 			})
 	}
 
-	fetchScenarioMediaByOtherUsers(gameId, scenarioId, excludingUserId, after) {
-		let ref = this.props.firestore
-			.doc(`games/${gameId}`)
-			.doc(`scenarios/${scenarioId}`)
-			.collection('media')
-			.where('userId', '!=', excludingUserId)
-			.orderBy('createdAt', 'desc')
+	fetchScenarioMediaByOtherUsers = (gameId, scenarioId, excludingUserId, after) => {
+		const { firestore } = this.props;
 
-		if (after) {
-			ref = ref.startAfter(after);
-		}
-
-		ref.limit(10);
-
-		ref.get().then(snapshot => {
-			const medias = snapshot.docs.map(snap => ({ ...snap, ...snap.data() }));
-			this.setState({
-				otherUserMedia: {
-					[scenarioId]: [
-						...this.state.otherUserMedia[scenarioId] || [],
-						...medias,
-					],
-				}
-			})
+		let mediaRef = firestore.collection(`games/${gameId}/scenarios/${scenarioId}/media`).orderBy("userId");
+		const [preUserRef, postUserRef] = ['>', '<'].map(operator => {
+			return mediaRef.where('userId', operator, excludingUserId);
 		})
+
+		Promise.all(
+				[preUserRef, postUserRef].map(ref => ref.get())
+			)
+			.then(([preUserQuerySnapshot, postUserQuerySnapshot]) => {
+				const preUserDocumentRef = preUserQuerySnapshot.docs.map(documentRef => {
+					const { id, ref } = documentRef;
+					return { id, ref, ...documentRef.data() }
+				});
+				const postUserDocumentRef = postUserQuerySnapshot.docs.map(documentRef => {
+					const { id, ref } = documentRef;
+					return { id, ref, ...documentRef.data() };
+				});
+
+				const sortedPosts = [...preUserDocumentRef, ...postUserDocumentRef].sort(function (a, b) {
+					return b.createdAt.seconds - a.createdAt.seconds;
+				})
+
+				this.setState({
+					otherUserMedia: {
+						...this.state.otherUserMedia || {},
+						[scenarioId]: sortedPosts,
+					}
+				})
+			})
 	}
 
 	render() {
-		const { Component } = this.props;
 		return (
 			<Context.Provider value={{
 				gamesById: this.state.games,

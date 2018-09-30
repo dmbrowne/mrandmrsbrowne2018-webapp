@@ -7,13 +7,11 @@ import App from './App';
 import registerServiceWorker from './registerServiceWorker';
 import firebase, { firestore, firebaseStorage, firebaseFunctions } from "./firebase";
 import FirebaseContext from './firebase/context';
-import withStore from './store';
 import { GamesProvider } from './store/games';
 import { FeedProvider } from './store/feed';
 import { AuthProvider } from './store/auth';
 import { MediaProvider } from './store/media';
 import { UsersProvider } from './store/users';
-import Auth from './store/auth';
 
 const WrappedApp = () => (
 	<BrowserRouter>

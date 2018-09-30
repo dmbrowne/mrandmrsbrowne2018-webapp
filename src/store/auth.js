@@ -1,6 +1,8 @@
 import React from 'react';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { withFirebase } from '../firebase';
+import PageLoader from '../components/PageLoader';
+
 const defaultState = {
 	user: null,
 }
@@ -27,7 +29,7 @@ class AuthContextProvider extends React.Component {
 
 	render() {
 		if (this.state.fetchingUser) {
-			return <CircularProgress />
+			return <PageLoader />
 		}
 
 		return (

@@ -1,13 +1,11 @@
 import * as React from 'react';
 import { CircularProgress, Typography, IconButton, Button, TextField } from '@material-ui/core';
 import CameraIcon from '@material-ui/icons/Camera';
-import ArrowBack from '@material-ui/icons/ArrowBack';
-import SendIcon from '@material-ui/icons/Send';
 import CancelIcon from '@material-ui/icons/Cancel';
 import * as uuidv4 from 'uuid/v4';
-import ScenarioMediaItem from '../components/ScenarioMediaItem';
 import MediaItem from '../components/MediaItem';
 import { withGames } from '../store/games';
+import { withMedia } from '../store/media';
 import { withFirebase } from '../firebase';
 import { withAuth } from '../store/auth';
 import MinimalFileUpload from '../components/FileUploadMinimal';
@@ -18,7 +16,7 @@ class ISpyScenario extends React.Component {
 		caption: '',
 		mediaPreview: null,
 		file: this.props.location.state && this.props.location.state.file || null,
-		fileType: this.props.location.state && this.props.location.state.fileType || null,
+		mediaType: this.props.location.state && this.props.location.state.mediaType || null,
 	}
 
 	scenarioFirestoreRef = this.props.firestore.doc(
@@ -41,23 +39,26 @@ class ISpyScenario extends React.Component {
 		this.props.games.fetchScenarioMediaByOtherUsers('ispy', scenarioId, this.props.auth.user.uid);
 	}
 
-	async create() {
-		const uploadedMedia = await this.upload();
-		const newMedia = await this.createNewMediaFromStorageReference(uploadedMedia);
-		const mediaType = uploadedMedia.metadata.contentType.includes('video')
-			? 'video'
-			: 'image';
-		const mediaReference = mediaType === 'video'
-			? this.props.firestore.doc(`videos/${newMedia.id}`)
-			: this.props.firestore.doc(`photos/${newMedia.id}`)
-		await this.createGameScenarioMedia(mediaType, mediaReference);
-		await this.addNewFeedPost(mediaType, mediaReference);
-		this.props.history.goBack();
+	create() {
+		const storageReference = uuidv4().split('-').join('');
+		const collection = this.state.mediaType.includes('video') ? 'videos' : 'photos';
+		const mediaDocumentReference = this.props.firestore.collection(collection).doc();
+		this.props.media.uploadFile(storageReference, this.state.file);
+		return Promise.all([
+			this.createPhotoOrVideoDocument(mediaDocumentReference, storageReference),
+			this.createGameScenarioMedia(mediaDocumentReference),
+			this.addNewFeedPost(mediaDocumentReference),
+		])
+		.then(() => this.props.history.goBack());
 	}
 
-	upload = () => {
-		const ref = uuidv4().split('-').join('');
-		return this.props.firebaseStorage.ref().child(ref).put(this.state.file);
+	createPhotoOrVideoDocument(mediaDocumentReference, storageReferencePath) {
+		return mediaDocumentReference.set({
+			userId: this.props.auth.user.uid,
+			storageReference: storageReferencePath,
+			cloudinaryPublicId: null,
+			complete: false,
+		});
 	}
 
 	getScenario() {
@@ -66,41 +67,33 @@ class ISpyScenario extends React.Component {
 		return games.scenariosById[scenarioId];
 	}
 
-	createGameScenarioMedia(mediaType, photoOrVideoReference) {
+	createGameScenarioMedia(photoOrVideoReference) {
 		const scenarioMediaRef = this.scenarioFirestoreRef.collection('media');
 		return scenarioMediaRef.doc(photoOrVideoReference.id).set({
 			userId: this.props.auth.user.uid,
-			mediaType,
+			mediaType: this.state.mediaType,
 			mediaReference: photoOrVideoReference,
 		});
 	}
 
-	addNewFeedPost(mediaType, photoOrVideoReference) {
+	addNewFeedPost(photoOrVideoReference) {
 		return this.props.firestore.collection('feed').add({
 			userId: this.props.auth.user.uid,
 			caption: this.state.caption,
-			mediaType,
+			mediaType: this.state.mediaType,
 			mediaReference: photoOrVideoReference,
 			gameReference: this.props.firestore.doc('games/ispy'),
 			scenarioReference: this.scenarioFirestoreRef,
 		})
 	}
 
-	async createNewMediaFromStorageReference(uploadedMediaSnapshot) {
-		const addMedia = this.props.firebaseFunctions.httpsCallable('addMedia');
-		const { contentType } = uploadedMediaSnapshot.metadata;
-		const storageReferenceId =  uploadedMediaSnapshot.metadata.name;
-		const {data: newMedia} = await addMedia({ storageReference: storageReferenceId });
-		return newMedia;
-	}
-
-	onFileChange = (file, fileType, mediaPreview) => {
-		this.setState({ file, fileType, mediaPreview })
+	onFileChange = (file, mediaType, mediaPreview) => {
+		this.setState({ file, mediaType, mediaPreview })
 	}
 
 	render() {
 		const scenario = this.getScenario();
-		const { mediaPreview, fileType, file } = this.state;
+		const { mediaPreview, mediaType, file } = this.state;
 
 		if (!scenario) {
 			return <CircularProgress />
@@ -115,8 +108,8 @@ class ISpyScenario extends React.Component {
 					<div className="preview-container">
 						{!!mediaPreview &&
 							<div className="media-preview">
-								{fileType === 'video' && <video autoPlay loop src={mediaPreview} />}
-								{fileType === 'image' && <img src={mediaPreview} />}
+								{mediaType === 'video' && <video autoPlay loop src={mediaPreview} />}
+								{mediaType === 'image' && <img src={mediaPreview} />}
 							</div>
 						}
 						<MinimalFileUpload value={file} onChange={this.onFileChange}>
@@ -162,4 +155,4 @@ class ISpyScenario extends React.Component {
 	}
 }
 
-export default withGames(withAuth(withFirebase(ISpyScenario)));
+export default withGames(withAuth(withMedia(withFirebase(ISpyScenario))));

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { withAuth } from '../store/auth';
+import { withMedia } from '../store/media';
 import { withFirebase } from '../firebase';
 import {
 	Button,
@@ -12,8 +12,6 @@ import {
 	Typography,
 	IconButton
 } from '@material-ui/core';
-import ArrowBackIos from '@material-ui/icons/ArrowBackIos';
-import { debounce } from '../utils';
 
 class Account extends React.Component {
 	state = {
@@ -49,6 +47,7 @@ class Account extends React.Component {
 
 	render() {
 		const { auth: { user } } = this.props;
+		console.log(this.props.media.uploads)
 		return (
 			<div className="account">
 				<div>
@@ -109,5 +108,5 @@ class Account extends React.Component {
 }
 
 export default withFirebase(
-	withAuth(Account)
+	withAuth(withMedia(Account))
 );

@@ -8,6 +8,7 @@ import * as uuidv4 from 'uuid/v4';
 import MinimalFileUpload from '../components/FileUploadMinimal';
 import { withFirebase } from '../firebase';
 import { withAuth } from '../store/auth';
+import { withMedia } from '../store/media';
 
 
 class NewPost extends React.Component {
@@ -16,7 +17,7 @@ class NewPost extends React.Component {
 		caption: '',
 		mediaPreview: null,
 		file: this.props.location.state && this.props.location.state.file || null,
-		fileType: this.props.location.state && this.props.location.state.fileType || null,
+		mediaType: this.props.location.state && this.props.location.state.mediaType || null,
 	}
 
 	componentWillMount() {
@@ -26,38 +27,40 @@ class NewPost extends React.Component {
 		})
 	}
 
-	upload = () => {
-		const ref = uuidv4().split('-').join('');
-		return this.props.firebaseStorage.ref().child(ref).put(this.state.file);
-	}
-
-	savePostData(photoOrVideoReference) {
+	createFeedPost(mediaDocumentReference) {
 		this.props.firestore.collection('feed').add({
 			userId: this.props.auth.user.uid,
-			mediaType: this.state.fileType === 'image' ? 'photo' : 'video',
-			mediaReference: photoOrVideoReference,
+			mediaType: this.state.mediaType === 'image' ? 'photo' : 'video',
+			mediaReference: mediaDocumentReference,
 			caption: this.state.caption,
 			headline: this.state.headline,
+			mediaComplete: false,
 		})
 	}
 
-	onUploadSuccess = async (uploadedMediaSnapshot) => {
-		const addMedia = this.props.firebaseFunctions.httpsCallable('addMedia');
-		const { contentType } = uploadedMediaSnapshot.metadata;
-		const storageReferenceId =  uploadedMediaSnapshot.metadata.name;
-		const {data: newMedia} = await addMedia({ storageReference: storageReferenceId });
-		const collection = contentType.includes('video') ? 'videos' : 'photos';
-		const photoOrVideoReference = this.props.firestore.doc(`${collection}/${newMedia.id}`)
-		await this.savePostData(photoOrVideoReference);
+	createPhotoOrVideoDocument(mediaDocumentReference, storageReferencePath) {
+		return mediaDocumentReference.set({
+			userId: this.props.auth.user.uid,
+			storageReference: storageReferencePath,
+			cloudinaryPublicId: null,
+			complete: false,
+		});
 	}
 
-	createNewPost = async () => {
-		const mediaSnapshot = await this.upload();
-		this.onUploadSuccess(mediaSnapshot).then(() => this.props.history.push('/'));
+	createNewPost = () => {
+		const storageReference = uuidv4().split('-').join('');
+		const collection = this.state.mediaType.includes('video') ? 'videos' : 'photos';
+		const mediaDocumentReference = this.props.firestore.collection(collection).doc();
+		this.props.media.uploadFile(storageReference, this.state.file);
+		Promise.all([
+			this.createPhotoOrVideoDocument(mediaDocumentReference, storageReference),
+			this.createFeedPost(mediaDocumentReference),
+		])
+		.then(() => this.props.history.push('/'));
 	}
 
-	onFileChange = (file, fileType, mediaPreview) => {
-		this.setState({ file, fileType, mediaPreview })
+	onFileChange = (file, mediaType, mediaPreview) => {
+		this.setState({ file, mediaType, mediaPreview })
 	}
 
 	onHeadlineChange = (e) => {
@@ -75,7 +78,7 @@ class NewPost extends React.Component {
 	}
 
 	render() {
-		const { file, fileType, mediaPreview } = this.state
+		const { file, mediaType, mediaPreview } = this.state
 		const locationState = this.props.location.state;
 		return (
 			<div className="root">
@@ -84,8 +87,8 @@ class NewPost extends React.Component {
 						<div className="preview-container">
 							{!!mediaPreview &&
 								<div className="media-preview">
-									{fileType === 'video' && <video autoPlay loop src={mediaPreview} />}
-									{fileType === 'image' && <img src={mediaPreview} />}
+									{mediaType === 'video' && <video autoPlay loop src={mediaPreview} />}
+									{mediaType === 'image' && <img src={mediaPreview} />}
 								</div>
 							}
 							<MinimalFileUpload value={file} onChange={this.onFileChange}>
@@ -163,6 +166,8 @@ class NewPost extends React.Component {
 
 export default withTheme()(
 	withFirebase(
-		withAuth(NewPost)
+		withAuth(
+			withMedia(NewPost)
+		)
 	)
 );

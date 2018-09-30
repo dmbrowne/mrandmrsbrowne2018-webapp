@@ -1696,6 +1696,10 @@ caniuse-lite@^1.0.30000748, caniuse-lite@^1.0.30000792:
   version "1.0.30000885"
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30000885.tgz#e889e9f8e7e50e769f2a49634c932b8aee622984"
 
+canvas-renderer@~2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/canvas-renderer/-/canvas-renderer-2.0.1.tgz#0124a39b2022010d3a3533225da5f4a0aa08263d"
+
 capture-stack-trace@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/capture-stack-trace/-/capture-stack-trace-1.0.1.tgz#a6c0bbe1f38f3aa0b92238ecb6ff42c344d4135d"
@@ -4368,6 +4372,12 @@ istanbul-reports@^1.5.1:
   resolved "https://registry.yarnpkg.com/istanbul-reports/-/istanbul-reports-1.5.1.tgz#97e4dbf3b515e8c484caea15d6524eebd3ff4e1a"
   dependencies:
     handlebars "^4.0.3"
+
+jdenticon@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/jdenticon/-/jdenticon-2.1.0.tgz#a94f0434d3537d66a831502a6e6e593b186515fb"
+  dependencies:
+    canvas-renderer "~2.0.1"
 
 jest-changed-files@^20.0.3:
   version "20.0.3"

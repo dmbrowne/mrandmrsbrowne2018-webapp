@@ -15,7 +15,6 @@ class UsersProviderComponent extends React.Component {
 	}
 
 	fetchUserIfNonExistent = (userId) => {
-		console.log('fetching')
 		if (!this.state.usersById[userId]) {
 			this.fetchUserById(userId);
 		}

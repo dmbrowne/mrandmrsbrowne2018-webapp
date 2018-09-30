@@ -1,7 +1,7 @@
 import React from 'react';
-import { CircularProgress } from '@material-ui/core';
 import { Link } from 'react-router-dom';
 import { withGames } from '../store/games';
+import PageLoader from '../components/PageLoader';
 
 class ISpy extends React.Component {
 	componentDidMount() {
@@ -18,18 +18,16 @@ class ISpy extends React.Component {
 		return (
 			<div>
 				{!game
-					? <CircularProgress />
-					: (
-						<React.Fragment>
-							<h1>{game.title}</h1>
-							{game.description && <p>{game.description}</p>}
-							{scenarios && scenarios.map(scenario =>
-								<p key={scenario.id}>
-									<Link to={`${match.url}/${scenario.id}`}>{scenario.title}</Link>
-								</p>
-							)}
-						</React.Fragment>
-					)
+					? <PageLoader />
+					: <React.Fragment>
+						<h1>{game.title}</h1>
+						{game.description && <p>{game.description}</p>}
+						{scenarios && scenarios.map(scenario =>
+							<p key={scenario.id}>
+								<Link to={`${match.url}/${scenario.id}`}>{scenario.title}</Link>
+							</p>
+						)}
+					</React.Fragment>
 				}
 			</div>
 		)

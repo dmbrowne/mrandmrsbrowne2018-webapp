@@ -12,7 +12,7 @@ export default class AddNewPostButton extends React.Component {
 	render() {
 		return (
 			<label className="fileInputLabel">
-				<Button variant="fab" color="primary">
+				<Button variant="fab" color="primary" style={{border: `2px solid rgba(255,255,255,0.4)`}} elevation={5}>
 					<AddIcon />
 				</Button>
 				<input type="file" accept="image/*, video/*" onChange={this.onFileChange} />

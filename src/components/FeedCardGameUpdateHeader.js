@@ -3,6 +3,7 @@ import {
 	Typography,
 	Paper,
 	CircularProgress,
+	LinearProgress,
 } from '@material-ui/core';
 import { withFirebase } from '../firebase';
 import { withGames } from '../store/games';
@@ -16,7 +17,6 @@ class FeedCardGameUpdate extends React.Component {
 	}
 
 	getGame() {
-		console.log('hello')
 		const { games, gameRef } = this.props;
 		const game = games.gamesById[gameRef.id];
 		if (!game) {
@@ -35,13 +35,14 @@ class FeedCardGameUpdate extends React.Component {
 				{...rootProps}
 				className={`feed-card-game-update ${className ? className : ''}`}
 			>
-				{user && <UserAvatar user={user}/>}
+				{<UserAvatar user={user}/>}
 				<Paper className="content">
-					{game && user && scenario &&
-						<Typography variant="caption">
+					{game && user && scenario
+						? <Typography variant="caption">
 							<span className="username"><strong>{user.displayName}</strong></span> posted a{' '}
 							<em>{mediaType}</em> for <strong>{scenario.title}</strong> as part of the <strong><em>{game.title}</em></strong> game.
 						</Typography>
+						: <LinearProgress color="secondary" variant="query" />
 					}
 				</Paper>
 				<style jsx>{`
@@ -53,6 +54,8 @@ class FeedCardGameUpdate extends React.Component {
 						padding: 8px;
 						margin-left: 16px;
 						position: relative;
+						flex: 1;
+						min-height: calc(48px - 16px);
 					}
 					.feed-card-game-update :global(.content:before),
 					.feed-card-game-update :global(.content:after){

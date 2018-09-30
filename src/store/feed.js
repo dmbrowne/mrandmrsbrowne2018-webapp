@@ -8,6 +8,7 @@ const Context = React.createContext({
 	getItems: () => {},
 	subscribe: () => {},
 	unsubscribe: () => {},
+	onDelete: () => {},
 });
 
 class FeedContextProvider extends React.Component {
@@ -46,6 +47,10 @@ class FeedContextProvider extends React.Component {
 		}
 	}
 
+	onDelete(feedItem) {
+		feedItem.ref.delete();
+	}
+
 	render() {
 		const { Component } = this.props;
 		return (
@@ -56,6 +61,7 @@ class FeedContextProvider extends React.Component {
 					getItems: this.getFeedItems,
 					subscribe: this.subscribeToFeedItems,
 					unsubscribe: this.unsubscribeFeedItems,
+					onDelete: this.onDelete,
 				}
 			}}>
 				{this.props.children}

@@ -13,7 +13,7 @@ function Appbar(props) {
 				className="app-bar"
 				style={{backgroundColor: palette.champagne }}
 			>
-				<Toolbar className="toolbar" disableGutters={!!props.showBackButton}>
+				<Toolbar className="toolbar">
 					{props.showBackButton &&
 						<IconButton
 							style={{ color: palette.dark }}

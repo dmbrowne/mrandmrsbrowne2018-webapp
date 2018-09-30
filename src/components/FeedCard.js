@@ -9,13 +9,14 @@ import {
 	CircularProgress,
 } from '@material-ui/core';
 import FavoriteIcon from '@material-ui/icons/Favorite';
-import ShareIcon from '@material-ui/icons/Share';
 import FeedCardHeader from './FeedCardHeader';
 import FeedCardGameUpdateHeader from './FeedCardGameUpdateHeader';
 import MediaItem from './MediaItem';
+import { withAuth } from '../store/auth';
 
-export default class FeedCard extends React.Component {
+class FeedCard extends React.Component {
 	render() {
+		const cardBelongsToAuthUser = this.props.userId === this.props.auth.user.uid;
 		return (
 			<div className={`feedcard${this.props.gameReference ? ' game': ''}`}>
 				{this.props.gameReference &&
@@ -33,12 +34,19 @@ export default class FeedCard extends React.Component {
 							className="game-update"
 							userId={this.props.userId}
 							headline={this.props.headline}
+							onDelete={cardBelongsToAuthUser && this.props.onDelete}
 						/>
 					}
 					<MediaItem
 						mediaReference={this.props.mediaReference}
 						mediaType={this.props.mediaType}
+						autoPlayOnScroll
 					/>
+					<CardActions disableActionSpacing>
+						<IconButton aria-label="Add to favorites">
+							<FavoriteIcon />
+						</IconButton>
+					</CardActions>
 					{this.props.caption &&
 						<CardContent>
 							<Typography component="p">
@@ -46,14 +54,6 @@ export default class FeedCard extends React.Component {
 							</Typography>
 						</CardContent>
 					}
-					<CardActions disableActionSpacing>
-						<IconButton aria-label="Add to favorites">
-							<FavoriteIcon />
-						</IconButton>
-						<IconButton aria-label="Share">
-							<ShareIcon />
-						</IconButton>
-					</CardActions>
 				</Card>
 				<style jsx>{`
 					.feedcard :global(img),
@@ -66,3 +66,5 @@ export default class FeedCard extends React.Component {
 		)
 	}
 }
+
+export default withAuth(FeedCard);

@@ -13,28 +13,34 @@ class Feed extends React.Component {
 		this.props.feed.getItems().then(() => this.props.feed.subscribe());
 	}
 
-	onAddFile = (file, fileType) => {
+	onAddFile = (file, mediaType) => {
 		this.props.history.push({
 			pathname: '/new-post',
 			state: {
 				file,
-				fileType,
+				mediaType,
 				hideNavigationTabs: true,
 			}
 		})
 	}
 
+	confirmDelete = (feedItem) => {
+		if (window.confirm('Are you sure you want to delete this post?')) {
+			this.props.feed.onDelete(feedItem);
+		}
+	}
+
 	render() {
 		return (
 			<div className="feed">
-				{this.props.feed.items.map(feedItem => console.log(feedItem) ||
+				{this.props.feed.items.map(feedItem =>
 					<div
 						key={feedItem.id}
 						className={cx('feed-card-container', {
 							'game-feed-card': feedItem.gameReference
 						})}
 					>
-						<FeedCard {...feedItem} ref={undefined}/>
+						<FeedCard {...feedItem} ref={undefined} onDelete={() => this.confirmDelete(feedItem)}/>
 					</div>
 				)}
 				<div className="add-feed-post-container">
@@ -51,7 +57,10 @@ class Feed extends React.Component {
 						right: 24px;
 					}
 					.game-feed-card {
-						margin: 24px 16px;
+						margin: 32px 24px;
+					}
+					.game-feed-card:first-child {
+						margin-top: 0;
 					}
 				`}</style>
 			</div>
