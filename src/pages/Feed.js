@@ -7,10 +7,30 @@ import { withFeed } from '../store/feed';
 import FeedCard from '../components/FeedCard';
 import NewPostButton from '../components/AddNewPostButton';
 import { palette } from '../style';
+import { debounce } from '../utils'
 
 class Feed extends React.Component {
+
 	componentDidMount() {
-		this.props.feed.getItems().then(() => this.props.feed.subscribe());
+		if (!this.props.feed.items.length) {
+			this.props.feed.getItems().then(() => this.props.feed.subscribe());
+		}
+		window.addEventListener('scroll', debounce(this.loadMoreOnScrollBottom, 200));
+	}
+	
+	componentWillUnmount() {
+		window.removeEventListener('scroll', debounce);
+	}
+
+	loadMoreOnScrollBottom = () => {
+		if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+			this.props.feed.loadMore().then(() => {
+				window.scrollTo({
+					top: window.scrollY + 200,
+					behavior: 'smooth',
+				});
+			});
+		}
 	}
 
 	onAddFile = (file, mediaType) => {
@@ -32,7 +52,7 @@ class Feed extends React.Component {
 
 	render() {
 		return (
-			<div className="feed">
+			<div className="feed" ref={this.feedScroll}>
 				{this.props.feed.items.map(feedItem =>
 					<div
 						key={feedItem.id}
@@ -40,7 +60,12 @@ class Feed extends React.Component {
 							'game-feed-card': feedItem.gameReference
 						})}
 					>
-						<FeedCard {...feedItem} ref={undefined} onDelete={() => this.confirmDelete(feedItem)}/>
+					<FeedCard
+						{...feedItem}
+						reference={feedItem.ref}
+						ref={undefined}
+						onDelete={() => this.confirmDelete(feedItem)}
+					/>
 					</div>
 				)}
 				<div className="add-feed-post-container">
@@ -49,7 +74,6 @@ class Feed extends React.Component {
 				<style jsx>{`
 					.feed {
 						background: #f4f4f4;
-						overflow: hidden;
 					}
 					.add-feed-post-container {
 						position: fixed;

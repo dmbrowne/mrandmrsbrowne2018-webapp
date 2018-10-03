@@ -1,14 +1,13 @@
 import React from 'react';
-import { Divider, Typography, Button, TextField, withTheme } from '@material-ui/core';
+import { Typography, Button, TextField, withTheme, Paper } from '@material-ui/core';
 import CameraIcon from '@material-ui/icons/Camera';
-import ArrowBack from '@material-ui/icons/ArrowBack';
-import SendIcon from '@material-ui/icons/Send';
-import CancelIcon from '@material-ui/icons/Cancel';
+import WarningIcon from '@material-ui/icons/Warning';
 import * as uuidv4 from 'uuid/v4';
 import MinimalFileUpload from '../components/FileUploadMinimal';
 import { withFirebase } from '../firebase';
 import { withAuth } from '../store/auth';
 import { withMedia } from '../store/media';
+import InlineVideo from '../components/InlineVideo';
 
 
 class NewPost extends React.Component {
@@ -16,25 +15,49 @@ class NewPost extends React.Component {
 		headline: '',
 		caption: '',
 		mediaPreview: null,
-		file: this.props.location.state && this.props.location.state.file || null,
-		mediaType: this.props.location.state && this.props.location.state.mediaType || null,
+		file: (this.props.location.state && this.props.location.state.file) || null,
+		mediaType: (this.props.location.state && this.props.location.state.mediaType) || null,
+		videoMeta: {},
 	}
 
 	componentWillMount() {
-		this.props.appActions.setAppBarNext({
-			text: 'Post',
-			onClick: () => this.createNewPost(),
-		})
+		this.validate();
+	}
+
+	componentDidUpdate(prevProps, prevState) {
+		if (this.state.file !== prevState.file) {
+			this.validate();
+		}
+	}
+
+	validate() {
+		if (this.state.mediaType !== 'video') {
+			this.showNextButton();
+		} else if (this.state.videoMeta && this.state.videoMeta.duration <= 60) {
+			this.showNextButton();
+		} else {
+			this.showNextButton(false);
+		}
+	}
+
+	showNextButton(show = true) {
+		this.props.appActions.setAppBarNext(
+			show ? {
+				text: 'Post',
+				onClick: () => this.createNewPost(),
+			}
+			: null
+		)
 	}
 
 	createFeedPost(mediaDocumentReference) {
 		this.props.firestore.collection('feed').add({
 			userId: this.props.auth.user.uid,
-			mediaType: this.state.mediaType === 'image' ? 'photo' : 'video',
+			mediaType: this.state.mediaType === 'image' ? 'image' : 'video',
 			mediaReference: mediaDocumentReference,
 			caption: this.state.caption,
 			headline: this.state.headline,
-			mediaComplete: false,
+			mediaComplete: this.state.mediaType === 'image',
 		})
 	}
 
@@ -51,16 +74,24 @@ class NewPost extends React.Component {
 		const storageReference = uuidv4().split('-').join('');
 		const collection = this.state.mediaType.includes('video') ? 'videos' : 'photos';
 		const mediaDocumentReference = this.props.firestore.collection(collection).doc();
-		this.props.media.uploadFile(storageReference, this.state.file);
+		this.props.media.uploadFile({
+			ref: storageReference,
+			headline: this.state.headline,
+			caption: this.state.caption,
+			mediaPreview: this.state.mediaPreview,
+			isVideo: this.state.mediaType.includes('video'),
+		}, this.state.file);
 		Promise.all([
 			this.createPhotoOrVideoDocument(mediaDocumentReference, storageReference),
 			this.createFeedPost(mediaDocumentReference),
 		])
-		.then(() => this.props.history.push('/'));
+		.then(() => this.props.history.replace('/'));
 	}
 
 	onFileChange = (file, mediaType, mediaPreview) => {
-		this.setState({ file, mediaType, mediaPreview })
+		if (file) {
+			this.setState({ file, mediaType, mediaPreview });
+		}
 	}
 
 	onHeadlineChange = (e) => {
@@ -77,9 +108,14 @@ class NewPost extends React.Component {
 		}
 	}
 
+	onVideoLoadedMeta = (metadata) => {
+		this.setState({ videoMeta: metadata }, () => {
+			this.validate()
+		})
+	}
+
 	render() {
-		const { file, mediaType, mediaPreview } = this.state
-		const locationState = this.props.location.state;
+		const { file, mediaType, mediaPreview, videoMeta } = this.state
 		return (
 			<div className="root">
 				<div className="content">
@@ -87,8 +123,10 @@ class NewPost extends React.Component {
 						<div className="preview-container">
 							{!!mediaPreview &&
 								<div className="media-preview">
-									{mediaType === 'video' && <video autoPlay loop src={mediaPreview} />}
-									{mediaType === 'image' && <img src={mediaPreview} />}
+									{mediaType === 'video' &&
+										<InlineVideo videoSrc={mediaPreview} onMetaLoaded={this.onVideoLoadedMeta} />
+									}
+									{mediaType === 'image' && <img alt="new post preview" src={mediaPreview} />}
 								</div>
 							}
 							<MinimalFileUpload value={file} onChange={this.onFileChange}>
@@ -116,6 +154,15 @@ class NewPost extends React.Component {
 							/>
 						</div>
 					</div>
+					{(mediaType === 'video' && videoMeta && videoMeta.duration > 60) &&
+						<Paper>
+							<WarningIcon />
+							<Typography variant="caption">
+								The video is {Math.ceil(videoMeta.duration)} seconds long, videos are required to be 60 seconds or less.
+								Please trim or retake the video and try again.
+							</Typography>
+						</Paper>
+					}
 					<TextField
 						label="Caption this"
 						placeholder="caption"

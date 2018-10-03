@@ -1,32 +1,50 @@
 import * as React from 'react';
-import { CircularProgress, Typography, IconButton, Button, TextField } from '@material-ui/core';
+import { CircularProgress, Typography, Button, TextField } from '@material-ui/core';
 import CameraIcon from '@material-ui/icons/Camera';
-import CancelIcon from '@material-ui/icons/Cancel';
 import * as uuidv4 from 'uuid/v4';
-import MediaItem from '../components/MediaItem';
 import { withGames } from '../store/games';
 import { withMedia } from '../store/media';
 import { withFirebase } from '../firebase';
 import { withAuth } from '../store/auth';
 import MinimalFileUpload from '../components/FileUploadMinimal';
+import InlineVideo from '../components/InlineVideo';
 
 class ISpyScenario extends React.Component {
 	state = {
 		scenario: null,
 		caption: '',
 		mediaPreview: null,
-		file: this.props.location.state && this.props.location.state.file || null,
-		mediaType: this.props.location.state && this.props.location.state.mediaType || null,
+		file: (this.props.location.state && this.props.location.state.file) || null,
+		mediaType: (this.props.location.state && this.props.location.state.mediaType) || null,
 	}
 
 	scenarioFirestoreRef = this.props.firestore.doc(
 		`games/ispy/scenarios/${this.props.match.params.scenarioId}`
 	);
 
+
 	componentWillMount() {
+		this.validate();
+	}
+
+	componentDidUpdate(prevProps, prevState) {
+		if (this.state.file !== prevState.file) {
+			this.validate();
+		}
+	}
+
+	validate() {
+		if (this.state.mediaType !== 'video') {
+			this.showNextButton();
+		} else if (this.state.videoMeta && this.state.videoMeta.duration <= 60) {
+			this.showNextButton();
+		}
+	}
+
+	showNextButton() {
 		this.props.appActions.setAppBarNext({
 			text: 'Post',
-			onClick: () => this.create(),
+			onClick: () => this.createNewPost(),
 		})
 	}
 
@@ -43,7 +61,13 @@ class ISpyScenario extends React.Component {
 		const storageReference = uuidv4().split('-').join('');
 		const collection = this.state.mediaType.includes('video') ? 'videos' : 'photos';
 		const mediaDocumentReference = this.props.firestore.collection(collection).doc();
-		this.props.media.uploadFile(storageReference, this.state.file);
+		this.props.media.uploadFile({
+			ref: storageReference,
+			headline: this.getScenario().title,
+			caption: this.state.caption,
+			mediaPreview: this.state.mediaPreview,
+			isVideo: this.state.mediaType.includes('video'),
+		}, this.state.file);
 		return Promise.all([
 			this.createPhotoOrVideoDocument(mediaDocumentReference, storageReference),
 			this.createGameScenarioMedia(mediaDocumentReference),
@@ -71,24 +95,33 @@ class ISpyScenario extends React.Component {
 		const scenarioMediaRef = this.scenarioFirestoreRef.collection('media');
 		return scenarioMediaRef.doc(photoOrVideoReference.id).set({
 			userId: this.props.auth.user.uid,
-			mediaType: this.state.mediaType,
+			mediaType: this.state.mediaType === 'video' ? 'video' : 'image',
 			mediaReference: photoOrVideoReference,
 		});
 	}
 
 	addNewFeedPost(photoOrVideoReference) {
 		return this.props.firestore.collection('feed').add({
+			gameReference: this.props.firestore.doc('games/ispy'),
 			userId: this.props.auth.user.uid,
 			caption: this.state.caption,
-			mediaType: this.state.mediaType,
+			mediaType: this.state.mediaType === 'video' ? 'video' : 'image',
 			mediaReference: photoOrVideoReference,
-			gameReference: this.props.firestore.doc('games/ispy'),
 			scenarioReference: this.scenarioFirestoreRef,
+			mediaComplete: this.state.mediaType === 'image',
 		})
 	}
 
 	onFileChange = (file, mediaType, mediaPreview) => {
-		this.setState({ file, mediaType, mediaPreview })
+		if (file) {
+			this.setState({ file, mediaType, mediaPreview });
+		}
+	}
+
+	onVideoLoadedMeta = (metadata) => {
+		this.setState({ videoMeta: metadata }, () => {
+			this.validate()
+		})
 	}
 
 	render() {
@@ -108,7 +141,9 @@ class ISpyScenario extends React.Component {
 					<div className="preview-container">
 						{!!mediaPreview &&
 							<div className="media-preview">
-								{mediaType === 'video' && <video autoPlay loop src={mediaPreview} />}
+								{mediaType === 'video' &&
+									<InlineVideo videoSrc={mediaPreview} onMetaLoaded={this.onVideoLoadedMeta} />
+								}
 								{mediaType === 'image' && <img src={mediaPreview} />}
 							</div>
 						}

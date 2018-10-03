@@ -43,3 +43,33 @@ export function throttle(fn, wait) {
 		}
 	}
 }
+
+export function getRandomIntInclusive(min, max) {
+	min = Math.ceil(min);
+	max = Math.floor(max);
+	return Math.floor(Math.random() * (max - min)) + min;
+}
+
+
+export function* fontSequentialiser() {
+	const fonts = [
+		'Bungee Inline',
+		'Fredricka the Great',
+		'Handlee',
+		'Indie Flower',
+		'Monoton',
+		'Montserrat',
+		'Shrikhand',
+		'Spirax',
+		'Yellowtail',
+	];
+	let counter = 0;
+
+	while(true) {
+		yield fonts[counter];
+		counter += 1;
+		if (counter + 1 === fonts.length) {
+			counter = 0;
+		}
+	}
+}

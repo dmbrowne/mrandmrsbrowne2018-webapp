@@ -9,13 +9,37 @@ class MediaItem extends React.Component {
   componentDidMount() {
 		const { mediaReference } = this.props;
 		this.props.media.subscribeToMediaItem(mediaReference);
-  }
+	}
+	
+	getVideoThumbSrc(mediaDocument) {
+		console.log(this.props.squareThumb)
+		const cloudinaryUrl = 'https://res.cloudinary.com/liquidation/video/upload/';
+		const { cloudinaryPublicId } = mediaDocument;
+		const cropParameter = this.props.squareThumb ? 'ar_1:1,c_crop' : 'ar_5:4,c_crop';
+		return cloudinaryUrl + cropParameter + `/${cloudinaryPublicId}`;
+	}
+	
+	getImgThumbSrc(mediaDocument) {
+		const cloudinaryUrl = 'https://res.cloudinary.com/liquidation/image/upload/';
+		const { cloudinaryPublicId } = mediaDocument;
+		const cropParameter = this.props.squareThumb ? 'ar_1:1,c_crop' : 'ar_16:10,c_fill';
+		return cloudinaryUrl + cropParameter + `/${cloudinaryPublicId}`;
+	}
 
   mediaElement = mediaDocument => {
-		const Video = this.props.autoPlayOnScroll ? InlineVideo : FullScreenToggleVideo;
+		const Video = this.props.videoProps && this.props.videoProps.autoPlayOnScroll
+			? InlineVideo
+			: FullScreenToggleVideo;
+
     return this.props.mediaType === "video"
-			? <Video mediaDocument={mediaDocument} />
-    	: <FullScreenToggleImage mediaDocument={mediaDocument} />;
+			? <Video
+				{...this.props.videoProps}
+				thumbSrc={this.getVideoThumbSrc(mediaDocument)}
+				videoSrc={mediaDocument.cloudinary.secure_url} />
+    	: <FullScreenToggleImage
+				{...this.props.imgProps}
+				thumbSrc={this.getImgThumbSrc(mediaDocument)}
+				imgSrc={mediaDocument.cloudinary.secure_url} />;
   };
 
   render() {
@@ -25,7 +49,7 @@ class MediaItem extends React.Component {
     if (!mediaDocument || !mediaDocument.cloudinary) {
       return (
 				<div className="circular-loader">
-					<CircularProgress />
+					<CircularProgress size={20} />
 					<style jsx>{`
 						.circular-loader {
 							display: flex;

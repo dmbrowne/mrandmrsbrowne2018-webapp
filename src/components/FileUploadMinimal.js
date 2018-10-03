@@ -1,11 +1,5 @@
 import React from 'react';
-import * as uuidv4 from 'uuid/v4';
 import { withTheme } from '@material-ui/core/styles';
-import { CircularProgress, IconButton, Divider, Typography } from '@material-ui/core';
-import UploadIcon from '@material-ui/icons/CloudUpload';
-import CameraIcon from '@material-ui/icons/Camera';
-import CheckIcon from '@material-ui/icons/Check';
-import CloseIcon from '@material-ui/icons/Close';
 import { withFirebase } from '../firebase';
 
 class FileUpload extends React.Component {
@@ -28,6 +22,10 @@ class FileUpload extends React.Component {
 
 	onFileChange = (e) => {
 		const file = e.target.files[0];
+		if (!file) {
+			this.props.onChange(null, null, null);
+			return;
+		}
 		const fileType = file.type.split('/')[0];
 		this.setState({ uploadFile: file });
 
@@ -44,7 +42,7 @@ class FileUpload extends React.Component {
 		const { uploadFile } = this.state;
 
 		return (
-			<div>
+			<div className={this.props.className || ''}>
 				<label className="fileInputLabel">
 					{this.props.children}
 					<input

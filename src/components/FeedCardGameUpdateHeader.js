@@ -9,6 +9,7 @@ import { withFirebase } from '../firebase';
 import { withGames } from '../store/games';
 import { withUsers } from '../store/users';
 import UserAvatar from './UserAvatar';
+import { palette } from '../style';
 
 class FeedCardGameUpdate extends React.Component {
 	componentDidMount() {
@@ -38,7 +39,7 @@ class FeedCardGameUpdate extends React.Component {
 				{<UserAvatar user={user}/>}
 				<Paper className="content">
 					{game && user && scenario
-						? <Typography variant="caption">
+						? <Typography variant="caption" style={{ color: palette.gold }}>
 							<span className="username"><strong>{user.displayName}</strong></span> posted a{' '}
 							<em>{mediaType}</em> for <strong>{scenario.title}</strong> as part of the <strong><em>{game.title}</em></strong> game.
 						</Typography>

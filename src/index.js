@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, HashRouter } from 'react-router-dom';
 import './customFonts.css';
 import './index.css';
 import App from './App';
@@ -13,8 +13,12 @@ import { AuthProvider } from './store/auth';
 import { MediaProvider } from './store/media';
 import { UsersProvider } from './store/users';
 
+const Router = window.matchMedia('(display-mode: standalone)').matches
+    ? HashRouter
+    : BrowserRouter;
+
 const WrappedApp = () => (
-	<BrowserRouter>
+	<Router>
 		<FirebaseContext.Provider value={{ firebase, firestore, firebaseStorage, firebaseFunctions }}>
 			<AuthProvider>
 				<UsersProvider>
@@ -28,7 +32,7 @@ const WrappedApp = () => (
 				</UsersProvider>
 			</AuthProvider>
 		</FirebaseContext.Provider>
-	</BrowserRouter>
+	</Router>
 )
 
 

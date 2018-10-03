@@ -7,7 +7,6 @@ import {
 	GridListTileBar
 } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
-import FavoriteIcon from '@material-ui/icons/Favorite';
 import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline';
 import Paper from '@material-ui/core/Paper';
 import { withGames } from '../store/games';
@@ -44,10 +43,6 @@ class ISpyScenario extends React.Component {
 		`games/ispy/scenarios/${this.props.match.params.scenarioId}`
 	);
 
-	constructor(props) {
-		super(props);
-	}
-
 	componentDidMount() {
 		const { games, match: {params}, auth: {user} } = this.props;
 		games.fetchScenarioMediaByOtherUsers("ispy", params.scenarioId, user.uid);
@@ -63,7 +58,6 @@ class ISpyScenario extends React.Component {
 	}
 
 	subscribeToUserMediaForActiveScenario() {
-		const { scenarioId } = this.props.match.params;
 		this.scenarioFirestoreRef
 			.collection('media')
 			.where('userId', '==', this.props.auth.user.uid)
@@ -137,6 +131,7 @@ class ISpyScenario extends React.Component {
 										<MediaItem
 											mediaReference={media.mediaReference}
 											mediaType={media.mediaType}
+											squareThumb
 										/>
 										<GridListTileBar
 											classes={{root: classes.titleBar}}
@@ -166,6 +161,7 @@ class ISpyScenario extends React.Component {
 											<MediaItem
 												mediaReference={scenarioMedia.mediaReference}
 												mediaType={scenarioMedia.mediaType}
+												squareThumb
 											/>
 										</GridListTile>
 									))}

@@ -31,8 +31,15 @@ class FileUpload extends React.Component {
 
 	onFileChange = (e) => {
 		const file = e.target.files[0];
+		if (!file) {
+			this.setState({
+				uploadFile: null,
+				uploadFileType: null,
+			});
+			return;
+		}
+		
 		const fileType = file.type.split('/')[0];
-
 		this.setState({
 			uploadFile: file,
 			uploadFileType: fileType,

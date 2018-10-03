@@ -1,5 +1,4 @@
 import React from 'react';
-import CircularProgress from '@material-ui/core/CircularProgress';
 import { withFirebase } from '../firebase';
 import PageLoader from '../components/PageLoader';
 

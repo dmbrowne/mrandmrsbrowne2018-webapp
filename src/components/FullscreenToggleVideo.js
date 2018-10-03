@@ -1,62 +1,42 @@
 import React from 'react';
 import fscreen from 'fscreen';
 import VideoCamIcon from '@material-ui/icons/Videocam'
+import { withFullscreenVideo } from '../hocs/fullscreenVideo'
 
-export default class FullScreenToggleVideo extends React.Component {
+
+class FullScreenToggleVideo extends React.Component {
 	state = {
 		fullscreen: false,
-		videoPlaying: false
 	}
 
-	videoElement = React.createRef();
-  fullScreenRef = React.createRef();
-
-	componentDidMount() {
-		const { onFullscreenChange, updatePlayState } = this;
-		const { mediaReference } = this.props;
-		fscreen.addEventListener('fullscreenchange', onFullscreenChange);
-		this.videoElement.current.addEventListener('play', updatePlayState.bind(this, true));
-		this.videoElement.current.addEventListener('pause', updatePlayState.bind(this, false));
-  }
-
-	componentWillUnmount() {
-		fscreen.removeEventListener("fullscreenchange", this.onFullscreenChange);
-		this.videoElement.current.removeEventListener('play', this.updatePlayState);
-		this.videoElement.current.addEventListener('pause', this.updatePlayState);
-	}
-
-	updatePlayState = (playing) => {
-		this.setState({ videoPlaying: playing });
-	}
-
-	onFullscreenChange = (e) => {
-		if (fscreen.fullscreenElement === null) {
-			const newState = { fullscreen: null };
-			if (this.state.videoPlaying) {
-				this.videoElement.current.pause();
-				this.videoElement.current.currentTime = 0;
-				newState.videoPlaying = false;
-			}
-			this.setState(newState)
+	componentDidUpdate(prevProps) {
+		if (prevProps.videoIsFullscreen !== this.props.videoIsFullscreen) {
+			this.setState({ fullscreen: this.props.videoIsFullscreen })
 		}
 	}
 
-	playFullscreenVideo = () => {
-		fscreen.requestFullscreen(this.videoElement.current);
-		this.videoElement.current.play();
+	viewFullScreen = () => {
+		this.setState({ fullscreen: true }, () => {
+			this.props.playFullscreenVideo()
+		});
 	}
 
 	render() {
+		const src = this.props.thumbSrc
+			? this.state.fullscreen ? this.props.videoSrc : this.props.thumbSrc
+			: this.props.videoSrc;
+	
 		return (
 			<div className="fullscreen-applicable-video">
 				<video
-					ref={this.videoElement}
-					src={this.props.mediaDocument.cloudinary.secure_url}
-					onClick={this.playFullscreenVideo}
-					loop muted
+					ref={this.props.videoRef}
+					src={src}
+					onClick={this.viewFullScreen}
+					muted
+					disabled
 				/>
 				<footer>
-					<VideoCamIcon style={{ fontSize: '1.5em', color: '#fff' }}/>
+					<VideoCamIcon style={{ color: '#fff' }}/>
 				</footer>
 				<style jsx>{`
 					.fullscreen-applicable-video {
@@ -65,18 +45,15 @@ export default class FullScreenToggleVideo extends React.Component {
 					.fullscreen-applicable-video footer {
 						position: absolute;
 						right: 3px;
-						bottom: 3%;
-						background: rgba(0,0,0,0.2);
-						border-radius: 50%;
-						width: 40px;
-						height: 40px;
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						border: 1px solid #fff;
+						bottom: 5px;
+						width: 30px;
+						height: 30px;
+				
 					}
 				`}</style>
 			</div>
-    );
+		);
 	}
 }
+
+export default withFullscreenVideo(FullScreenToggleVideo, { stopOnFullscreenExit: true });

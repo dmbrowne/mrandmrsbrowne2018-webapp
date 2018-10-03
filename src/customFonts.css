@@ -3,8 +3,8 @@
   font-style: normal;
   font-weight: 400;
   src: local('Material Icons'),
-       local('GreatVibes-Regular'),
-       url(/assets/greatvibes-regular.ttf) format('truetype');
+      local('GreatVibes-Regular'),
+      url(/assets/greatvibes-regular.ttf) format('truetype');
 }
 
 @font-face {
@@ -12,6 +12,87 @@
   font-style: normal;
   font-weight: 400;
   src: local('Pacifico'),
-       local('Pacifico-Regular'),
-       url(/assets/pacific-regular.ttf) format('truetype');
+      local('Pacifico-Regular'),
+      url(/assets/pacifico-regular.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Bungee Inline';
+  font-style: normal;
+  font-weight: 400;
+  src: local('BungeeInline-Regular'),
+      local('BungeeInline-Regular'),
+      url(/assets/BungeeInline-Regular.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Fredricka the Great';
+  font-style: normal;
+  font-weight: 400;
+  src: local('FrederickatheGreat-Regular'),
+      local('FrederickatheGreat-Regular'),
+      url(/assets/FrederickatheGreat-Regular.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Handlee';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Handlee-Regular'),
+      local('Handlee-Regular'),
+      url(/assets/Handlee-Regular.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Indie Flower';
+  font-style: normal;
+  font-weight: 400;
+  src: local('IndieFlower'),
+      local('IndieFlower'),
+      url(/assets/IndieFlower.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Monoton';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Monoton-Regular'),
+      local('Monoton-Regular'),
+      url(/assets/Monoton-Regular.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Montserrat-Regular'),
+      local('Montserrat-Regular'),
+      url(/assets/Montserrat-Regular.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Shrikhand';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Shrikhand-Regular'),
+      local('Shrikhand-Regular'),
+      url(/assets/Shrikhand-Regular.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Spirax';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Spirax-Regular'),
+      local('Spirax-Regular'),
+      url(/assets/Spirax-Regular.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Yellowtail';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Yellowtail-Regular'),
+      local('Yellowtail-Regular'),
+      url(/assets/Yellowtail-Regular.ttf) format('truetype');
 }

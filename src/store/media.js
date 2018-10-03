@@ -31,36 +31,50 @@ class MediaProviderComponent extends React.Component {
 		})
 	}
 
-	updateUploadState(ref, progressPercent) {
+	updateUploadState({ref, mediaPreview, headline, caption, isVideo}, progressPercent) {
 		this.setState(state => ({
 			uploads: {
 				...state.uploads,
-				[ref]: progressPercent
+				[ref]: {
+					mediaPreview,
+					headline,
+					caption,
+					isVideo,
+					progressPercent,
+				}
 			}
 		}))
 	}
 
-	uploadFile = (ref, file) => {
-		this.updateUploadState(ref, 0);
-		const uploadTask = this.props.firebaseStorage.ref().child(ref).put(file);
-		uploadTask.on('state_changed',
-			(snapshot) => {
-			  const progressPercent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-			  switch (snapshot.state) {
-			    case 'paused':
-						return this.updateUploadState(ref, 'paused');
-			    case 'running':
-						if (progressPercent === 100) return;
-			      return this.updateUploadState(ref, progressPercent);
-			  }
-			},
-			(error) =>  this.updateUploadState(ref, 'error'),
-			() => {
+	uploadFile = ({ref, ...uploadStatusArgs}, file, meta, track = true) => {
+		// this.updateUploadState(ref, 0);
+		const args = meta ? [file, meta] : [file];
+		const uploadItemInfo = { ref, ...uploadStatusArgs };
+
+		const uploadTask = this.props.firebaseStorage.ref().child(ref).put(...args);
+
+		if (track) {
+			uploadTask.on('state_changed', (snapshot) => {
+				const progressPercent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+				switch (snapshot.state) {
+					case 'paused':
+						return this.updateUploadState(uploadItemInfo, 'paused');
+					case 'running': {
+						const uploadState = this.state.uploads[ref];
+						if (uploadState && uploadState.progressPercent === 100) return;
+						return this.updateUploadState(uploadItemInfo, progressPercent);
+					}
+				}
+			}, (error) =>  this.updateUploadState(uploadItemInfo, 'error'));
+
+			uploadTask.then(() => {
 				const newState = {...this.state};
 				delete newState[ref];
 				this.setState(newState);
-			}
-		);
+			});
+		}
+
+		return uploadTask;
 	}
 
 	render() {

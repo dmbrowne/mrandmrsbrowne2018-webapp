@@ -11,8 +11,6 @@ export default class FullScreenImage extends React.Component {
 	}
 
 	render() {
-		const { mediaDocument } = this.props;
-
 		return (
 			<div className="fullscreen" ref={this.fullScreenRef}>
 				<Toolbar style={{ color: '#fff', position: 'fixed', top: 0, right: 0 }}>
@@ -20,7 +18,7 @@ export default class FullScreenImage extends React.Component {
 						<CloseIcon />
 					</IconButton>
 				</Toolbar>
-				<img src={mediaDocument.cloudinary.secure_url} />
+				<img src={this.props.src} />
 				<style jsx>{`
 					.fullscreen {
 						display: flex;
