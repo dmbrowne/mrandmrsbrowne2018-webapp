@@ -29,7 +29,7 @@ export default class FullScreenToggleImage extends React.Component {
 	}
 
   viewFullScreenImage = (force) => {
-		if (this.props.disableDoubleClick && !force) {
+		if (this.props.disableImageClick && !force) {
 			return;
 		}
     this.setState({ fullscreen: true });
@@ -45,9 +45,10 @@ export default class FullScreenToggleImage extends React.Component {
 				<img
 					alt="media"
 					src={this.props.thumbSrc}
+					onClick={() => this.viewFullScreenImage()}
 				/>
-				{this.props.allowFullscreen && this.props.disableDoubleClick &&
-					<IconButton className="fullscreen-button" onClick={() => this.viewFullScreenImage(true)} >
+				{this.props.allowFullscreen && this.props.disableImageClick &&
+					<IconButton className="fullscreen-button" onClick={() => this.viewFullScreenImage(true)}>
 						<FullscreenIcon />
 					</IconButton>
 				}

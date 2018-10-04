@@ -74,7 +74,7 @@ class FeedCard extends React.Component {
 							mediaType={this.props.mediaType}
 							imgProps={{
 								allowFullscreen: true,
-								disableDoubleClick: true,
+								disableImageClick: true,
 							}}
 							videoProps={{
 								allowFullscreen: true,
