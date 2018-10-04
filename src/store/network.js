@@ -80,31 +80,30 @@ export class NetworkProvider extends React.Component {
             	</Button>
 						</DialogActions>
 					</Dialog>
-					{this.state.showPWAInstallMessage &&
-						<Slide direction="up" in={true}>
-							<div className="paper-container">
-								<Paper style={{ padding: 16 }} elevation={16}>
-									<div className="content">
-										<div className="logo"><img src={DAndYLogo} alt="yasmin and daryl logo" /></div>
-										<div>
-											<Typography variant="title">Mr. & Mrs. Browne 2018</Typography>
-											<Typography variant="caption">Save this app for easy access</Typography>
-										</div>
+					<Slide direction="up" in={this.state.showPWAInstallMessage}>
+						<div className="paper-container">
+							<Paper style={{ padding: 16 }} elevation={16}>
+								<div className="content">
+									<div className="logo"><img src={DAndYLogo} alt="yasmin and daryl logo" /></div>
+									<div>
+										<Typography variant="title">Mr. & Mrs. Browne 2018</Typography>
+										<Typography variant="caption">We recommend you add this as an app to your phone first before doing anything else.</Typography>
 									</div>
-									<footer>
-										<Button color="primary" variant="contained">Add to homescreen</Button>
-									</footer>
-								</Paper>
-							</div>
-						</Slide>
-					}
+								</div>
+								<footer>
+									<Button color="primary" variant="contained">Add to homescreen</Button>
+								</footer>
+							</Paper>
+						</div>
+					</Slide>
 					<style jsx>{`
 						.paper-container {
 							position: fixed;
-							bottom: 48px;
-							right: 5px;
+							bottom: 40px;
+							right: 8px;
 							width: 85%;
 							max-width: 600px;
+							z-index: 100%;
 						}
 						.content {
 							display: flex;
