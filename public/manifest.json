@@ -4,17 +4,17 @@
   "description": "The wedding of Mr. and Mrs. Browne on october 13th, 2018. Capture the day and join in the fun",
   "icons": [
     {
-      "src": "y-d_logo-92.png",
+      "src": "y-d-92x92.png",
       "sizes": "92x92",
       "type": "image/png"
     },
     {
-      "src": "yd-logo-144.png",
+      "src": "y-d-144x144.png",
       "sizes": "144x144",
       "type": "image/png"
     },
     {
-      "src": "y-d_logo-512.png",
+      "src": "y-d-512x512.png",
       "sizes": "192x192 512x512 ",
       "type": "image/png"
     }
