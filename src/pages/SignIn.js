@@ -74,11 +74,13 @@ class SignIn extends React.Component {
 						overflow: hidden;
           }
           .content {
-            position: relative;
+            position: absolute;
+						bottom: 0;
             z-index: 1;
 						text-align: center;
 						overflow: hidden;
-						padding-top: 78%;
+						height: 40%;
+						min-height: 400px;
           }
 					section {
 						height: 50vh;
