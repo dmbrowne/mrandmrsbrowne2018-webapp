@@ -126,6 +126,7 @@ class IndexPage extends React.Component {
 				<style jsx>{`
 					.app-container {
 						padding-bottom: ${this.state.hideNavigationTabs ? '0px' : '56px'};
+						overflow: hidden;
 					}
 					.app-container :global(.tab-navigation) {
 						height: 56px;
