@@ -7,7 +7,7 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogActions from '@material-ui/core/DialogActions';
 import Zoom from '@material-ui/core/Zoom';
 import Modal from '@material-ui/core/Modal';
-import DAndYLogo from '../icons/y-d_logo.svg';
+import DAndYLogo from '../icons/y-d_logo-wedding-theme.svg';
 import { Typography, Button } from '@material-ui/core';
 
 const NetworkContext = React.createContext({

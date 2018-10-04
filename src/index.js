@@ -5,7 +5,13 @@ import './customFonts.css';
 import './index.css';
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
-import firebase, { firestore, firebaseStorage, firebaseFunctions } from "./firebase";
+import firebase, {
+	firestore,
+	firebaseStorage,
+	firebaseFunctions,
+	firebaseAuth,
+	firebaseUI
+} from "./firebase";
 import FirebaseContext from './firebase/context';
 import { GamesProvider } from './store/games';
 import { FeedProvider } from './store/feed';
@@ -21,7 +27,14 @@ const Router = window.matchMedia('(display-mode: standalone)').matches
 const WrappedApp = () => (
 	<Router>
 		<NetworkProvider>
-			<FirebaseContext.Provider value={{ firebase, firestore, firebaseStorage, firebaseFunctions }}>
+			<FirebaseContext.Provider value={{
+				firebase,
+				firestore,
+				firebaseStorage,
+				firebaseFunctions,
+				firebaseAuth,
+				firebaseUI,
+			}}>
 				<AuthProvider>
 					<UsersProvider>
 						<GamesProvider>

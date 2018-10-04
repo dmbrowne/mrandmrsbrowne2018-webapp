@@ -1,6 +1,4 @@
 import React from 'react';
-import firebase from 'firebase/app';
-import * as firebaseui from 'firebaseui';
 import 'firebaseui/dist/firebaseui.css';
 import { Typography, CircularProgress } from '@material-ui/core';
 import { withFirebase } from '../firebase';
@@ -40,19 +38,18 @@ class SignIn extends React.Component {
 		},
 		signInSuccessUrl: '',
 		signInOptions: [
-			firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-			firebase.auth.FacebookAuthProvider.PROVIDER_ID,
-			firebase.auth.TwitterAuthProvider.PROVIDER_ID,
+			this.props.firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+			this.props.firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+			this.props.firebase.auth.TwitterAuthProvider.PROVIDER_ID,
 			{
-				provider: firebase.auth.PhoneAuthProvider.PROVIDER_ID,
+				provider: this.props.firebase.auth.PhoneAuthProvider.PROVIDER_ID,
 				defaultCountry: 'GB'
 			},
 		],
 	};
 
 	componentDidMount() {
-		const ui = new firebaseui.auth.AuthUI(firebase.auth());
-		ui.start('#firebaseui-auth-container', this.uiConfig);
+		this.props.firebaseUI.start('#firebaseui-auth-container', this.uiConfig);
 	}
 
 	render() {

@@ -17,7 +17,7 @@ class AuthContextProvider extends React.Component {
 			fetchingUser: true,
 		}
 
-		this.props.firebase.auth().onAuthStateChanged(user => {
+		this.props.firebaseAuth.onAuthStateChanged(user => {
 			if (user) {
 				this.setState({ user, fetchingUser: false })
 			} else {

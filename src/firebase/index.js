@@ -1,10 +1,12 @@
 import firebase from 'firebase/app';
+import * as firebaseui from 'firebaseui';
 import 'firebase/firestore';
 import 'firebase/auth';
 import 'firebase/storage';
 import 'firebase/functions';
 import config from './config.json';
 import { withFirebase as firebaseConsumerHoc } from './context';
+
 
 firebase.initializeApp({
 	apiKey: config.apiKey,
@@ -17,6 +19,8 @@ export default firebase;
 export const firestore = createFirestore(firebase);
 export const firebaseStorage = firebase.storage();
 export const firebaseFunctions = firebase.functions();
+export const firebaseAuth = firebase.auth();
+export const firebaseUI = new firebaseui.auth.AuthUI(firebase.auth());
 
 export function createFirestore(firebaseInst) {
 	const firestore = firebaseInst.firestore();
