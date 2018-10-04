@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { Route, Switch } from 'react-router-dom';
 import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import SignIn from './pages/SignIn';
-import Account from './pages/Account';
 import IndexPage from './pages/';
 import { palette } from './style';
 

@@ -1,17 +1,22 @@
 import * as React from 'react';
 import { withFirebase } from '../firebase';
+import { withNetwork } from './network';
 
 const Context = React.createContext({
   documents: {},
   uploads: {},
   subscribeToMediaItem: () => {},
-  uploadFile: () => {},
+	uploadFile: () => {},
+	uploadQueueOrder: [],
+	uploadQueue: {},
 });
 
 class MediaProviderComponent extends React.Component {
 	state = {
 		documents: {},
 		uploads: {},
+		uploadQueueOrder: [],
+		uploadQueue: {},
 	}
 
 	unsubscribers = {}
@@ -46,11 +51,37 @@ class MediaProviderComponent extends React.Component {
 		}))
 	}
 
-	uploadFile = ({ref, ...uploadStatusArgs}, file, meta, track = true) => {
-		// this.updateUploadState(ref, 0);
+	componentDidUpdate(prevProps) {
+		if (!prevProps.network.online && this.props.network.online) {
+			this.state.uploadQueueOrder.forEach(uploadRef => {
+				const uploadData = this.state.uploadQueue[uploadRef];
+				this.upload(uploadData);
+			})
+		}
+	}
+
+	attemptUpload = (...args) => {
+		const [{ref}] = args
+		const { uploadQueueOrder } = this.state;
+		
+		if (!this.props.network.online) {
+			this.setState({
+				uploadQueueOrder: uploadQueueOrder.includes(ref)
+				? uploadQueueOrder
+				: [...uploadQueueOrder, ref],
+				uploadQueue: {
+					...this.state.uploadQueue,
+					[ref]: args
+				}
+			})
+		} else {
+			return this.upload(...args);
+		}
+	}
+	
+	upload = ({ ref, ...uploadStatusArgs }, file, meta, track = true) => {
 		const args = meta ? [file, meta] : [file];
 		const uploadItemInfo = { ref, ...uploadStatusArgs };
-
 		const uploadTask = this.props.firebaseStorage.ref().child(ref).put(...args);
 
 		if (track) {
@@ -64,6 +95,8 @@ class MediaProviderComponent extends React.Component {
 						if (uploadState && uploadState.progressPercent === 100) return;
 						return this.updateUploadState(uploadItemInfo, progressPercent);
 					}
+					default:
+						break;
 				}
 			}, (error) =>  this.updateUploadState(uploadItemInfo, 'error'));
 
@@ -83,14 +116,15 @@ class MediaProviderComponent extends React.Component {
 				documents: this.state.documents,
 				subscribeToMediaItem: this.subscribeToMediaItem,
 				uploads: this.state.uploads,
-				uploadFile: this.uploadFile,
+				uploadFile: this.attemptUpload,
+				queuedUploads: this.state.uploadQueueOrder.map(ref => this.state.queuedUploads[ref]),
 			}}>
 				{this.props.children}
 			</Context.Provider>
 		)
 	}
 }
-export const MediaProvider = withFirebase(MediaProviderComponent);
+export const MediaProvider = withNetwork(withFirebase(MediaProviderComponent));
 
 
 export function withMedia(Component) {

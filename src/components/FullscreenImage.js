@@ -1,6 +1,6 @@
 import React from 'react';
 import fscreen from 'fscreen';
-import { CircularProgress, Toolbar, IconButton } from '@material-ui/core';
+import {  Toolbar, IconButton } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 
 export default class FullScreenImage extends React.Component {
@@ -18,7 +18,7 @@ export default class FullScreenImage extends React.Component {
 						<CloseIcon />
 					</IconButton>
 				</Toolbar>
-				<img src={this.props.src} />
+				<img src={this.props.src} alt="fullscreen view"/>
 				<style jsx>{`
 					.fullscreen {
 						display: flex;

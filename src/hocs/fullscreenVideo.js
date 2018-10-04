@@ -1,6 +1,5 @@
 import React from 'react';
 import fscreen from 'fscreen';
-import VideoCamIcon from '@material-ui/icons/Videocam'
 
 export default class FullScreenToggleVideo extends React.Component {
 	state = {
@@ -8,23 +7,33 @@ export default class FullScreenToggleVideo extends React.Component {
 		videoPlaying: false
 	}
 
+	constructor(props) {
+		super(props);
+		this.setPlayStateTrue = this.setPlayStateTrue.bind(this);
+		this.setPlayStateFalse = this.setPlayStateFalse.bind(this);
+	}
+
 	videoElement = this.props.videoRef || React.createRef();
 
 	componentDidMount() {
-		const { onFullscreenChange, updatePlayState } = this;
+		const { onFullscreenChange } = this;
 		fscreen.addEventListener('fullscreenchange', onFullscreenChange);
-		this.videoElement.current.addEventListener('play', updatePlayState.bind(this, true));
-		this.videoElement.current.addEventListener('pause', updatePlayState.bind(this, false));
+		this.videoElement.current.addEventListener('play', this.setPlayStateTrue);
+		this.videoElement.current.addEventListener('pause', this.setPlayStateFalse);
 	}
 
 	componentWillUnmount() {
 		fscreen.removeEventListener("fullscreenchange", this.onFullscreenChange);
-		this.videoElement.current.removeEventListener('play', this.updatePlayState);
-		this.videoElement.current.addEventListener('pause', this.updatePlayState);
+		this.videoElement.current.removeEventListener('play', this.setPlayStateTrue);
+		this.videoElement.current.removeEventListener('pause', this.setPlayStateFalse);
 	}
 
-	updatePlayState = (playing) => {
-		this.setState({ videoPlaying: playing });
+	setPlayStateTrue() {
+		this.setState({ videoPlaying: true });
+	}
+
+	setPlayStateFalse() {
+		this.setState({ videoPlaying: false });
 	}
 
 	onFullscreenChange = (e) => {

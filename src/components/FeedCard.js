@@ -5,8 +5,6 @@ import {
 	Typography,
 	CardActions,
 	IconButton,
-	Paper,
-	CircularProgress,
 } from '@material-ui/core';
 import FavoriteIcon from '@material-ui/icons/Favorite';
 import FavoriteBorderIcon from '@material-ui/icons/FavoriteBorder';
@@ -21,7 +19,7 @@ class FeedCard extends React.Component {
 	addPostLike() {
 		const { auth, likes } = this.props;
 		const key = `likes.${auth.user.uid}`;
-		const currentLikesByUser = likes && likes[auth.user.uid] || 0;
+		const currentLikesByUser = (likes && likes[auth.user.uid]) || 0;
 		this.props.reference.update({
 			[key]: currentLikesByUser + 1,
 		})
@@ -39,13 +37,16 @@ class FeedCard extends React.Component {
 	}
 
 	toggleLike = () => {
-		console.log('double click')
 		this.isLikedByUser()
 			? this.removePostLike()
 			: this.addPostLike();
 	}
 
 	render() {
+		const noOfLikes = this.props.likes 
+			? Object.entries(this.props.likes).filter(([userId, liked]) => liked).length
+			: 0;
+
 		const cardBelongsToAuthUser = this.props.userId === this.props.auth.user.uid;
 		return (
 			<div className={`feedcard${this.props.gameReference ? ' game': ''}`}>
@@ -81,7 +82,7 @@ class FeedCard extends React.Component {
 							}}
 						/>
 					</div>
-					<CardActions disableActionSpacing>
+					<CardActions disableActionSpacing style={{ paddingBottom: 0 }}>
 						<IconButton aria-label="Add to favorites" onClick={this.toggleLike}>
 							{this.isLikedByUser()
 								? <FavoriteIcon style={{ fontSize: 32, color: palette.gold }} />
@@ -89,13 +90,12 @@ class FeedCard extends React.Component {
 							}
 						</IconButton>
 					</CardActions>
-					{this.props.caption &&
-						<CardContent>
-							<Typography component="p">
-								{this.props.caption}
-							</Typography>
-						</CardContent>
-					}
+					<CardContent style={{ paddingTop: 0 }}>
+						{!!noOfLikes && <Typography variant="body2">{noOfLikes} likes</Typography>}
+						<Typography component="p" style={{paddingTop: 8}}>
+							{this.props.caption}
+						</Typography>
+					</CardContent>
 				</Card>
 				<style jsx>{`
 					.feedcard :global(img),

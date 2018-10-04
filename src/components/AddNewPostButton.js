@@ -4,13 +4,36 @@ import AddIcon from '@material-ui/icons/Add';
 
 export default class AddNewPostButton extends React.Component {
 	state = {
-		in: true,
-		scrollUp: true,
+		scrolldirectionIsUp: true,
+	}
+
+	lastScrollTop = window.pageYOffset;
+
+	constructor(props) {
+		super(props);
+		this.setScrollDirection = this.setScrollDirection.bind(this)
+	}
+
+	componentDidMount() {
+		window.addEventListener('scroll', this.setScrollDirection);
 	}
 
 	componentWillUnmount () {
-		this.setState({ in: false })
+		window.removeEventListener('scroll', this.setScrollDirection);
 	}
+
+	setScrollDirection() {
+		// const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+
+		if (document.body.getBoundingClientRect().top > this.lastScrollTop) {
+			this.setState({ scrolldirectionIsUp: true });
+		} else {
+			this.setState({ scrolldirectionIsUp: false });
+		}
+
+		this.lastScrollTop = document.body.getBoundingClientRect().top;
+	}
+
 	onFileChange = (e) => {
 		const file = e.target.files[0];
 		const fileType = file.type.split('/')[0];
@@ -19,7 +42,7 @@ export default class AddNewPostButton extends React.Component {
 
 	render() {
 		return (
-			<Zoom in={this.state.in}>
+			<Zoom in={this.state.scrolldirectionIsUp}>
 				<label className="fileInputLabel">
 					<Button variant="fab" color="primary" style={{border: `1px solid rgba(255,255,255,0.2)`}} elevation={5}>
 						<AddIcon />

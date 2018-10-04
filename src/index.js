@@ -12,6 +12,7 @@ import { FeedProvider } from './store/feed';
 import { AuthProvider } from './store/auth';
 import { MediaProvider } from './store/media';
 import { UsersProvider } from './store/users';
+import { NetworkProvider } from './store/network';
 
 const Router = window.matchMedia('(display-mode: standalone)').matches
     ? HashRouter
@@ -19,19 +20,21 @@ const Router = window.matchMedia('(display-mode: standalone)').matches
 
 const WrappedApp = () => (
 	<Router>
-		<FirebaseContext.Provider value={{ firebase, firestore, firebaseStorage, firebaseFunctions }}>
-			<AuthProvider>
-				<UsersProvider>
-					<GamesProvider>
-						<FeedProvider>
-							<MediaProvider>
-								<App />
-							</MediaProvider>
-						</FeedProvider>
-					</GamesProvider>
-				</UsersProvider>
-			</AuthProvider>
-		</FirebaseContext.Provider>
+		<NetworkProvider>
+			<FirebaseContext.Provider value={{ firebase, firestore, firebaseStorage, firebaseFunctions }}>
+				<AuthProvider>
+					<UsersProvider>
+						<GamesProvider>
+							<FeedProvider>
+								<MediaProvider>
+									<App />
+								</MediaProvider>
+							</FeedProvider>
+						</GamesProvider>
+					</UsersProvider>
+				</AuthProvider>
+			</FirebaseContext.Provider>
+		</NetworkProvider>
 	</Router>
 )
 

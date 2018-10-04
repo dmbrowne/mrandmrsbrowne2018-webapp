@@ -39,8 +39,6 @@ class FileUpload extends React.Component {
 	}
 
 	render() {
-		const { uploadFile } = this.state;
-
 		return (
 			<div className={this.props.className || ''}>
 				<label className="fileInputLabel">

@@ -5,17 +5,12 @@ import { withMedia } from '../store/media';
 import { withFirebase } from '../firebase';
 import {
 	Button,
-	Avatar,
 	CircularProgress,
 	TextField,
-	AppBar,
-	Toolbar,
 	Typography,
-	IconButton,
 } from '@material-ui/core';
 import CameraIcon from '@material-ui/icons/Camera';
 import FileUploadMinimal from '../components/FileUploadMinimal';
-import { palette } from '../style';
 
 class UploadItemHeadline extends React.PureComponent {
 	render() {
@@ -38,7 +33,7 @@ class UploadItemMediaPreview extends React.PureComponent {
 		return (
 			this.props.isVideo
 				? <video src={this.props.src} muted disabled />
-				: <img src={this.props.src} />
+				: <img src={this.props.src} alt="upload in progress preview" />
 		);
 	}
 }
@@ -65,7 +60,6 @@ class Account extends React.Component {
 
 	updateUserPhoto(photoURL) {
 		const { auth: { user }, firestore } = this.props;
-		const { displayName } = this.state;
 		return Promise.all([
 			firestore.doc(`users/${user.uid}`).update({ photoURL }),
 			user.updateProfile({ photoURL }),
@@ -77,8 +71,8 @@ class Account extends React.Component {
     this.nameUpdate = setTimeout(() => {
 			const { auth: { user }, firestore } = this.props;
 			const { displayName } = this.state;
-			firestore.doc(`users/${user.uid}`).update({ displayName }),
-			user.updateProfile({ displayName })
+			firestore.doc(`users/${user.uid}`).update({ displayName });
+			user.updateProfile({ displayName });
 		}, 500)
 	}
 
@@ -99,6 +93,8 @@ class Account extends React.Component {
 			switch (snapshot.state) {
 				case 'running':
 					return this.setState({ uploadProgress });
+				default:
+					break;
 			}
 		});
 
@@ -113,7 +109,7 @@ class Account extends React.Component {
 		return (
 			<div className="account">
 				<div className="avatar-container">
-					<img className="avatar" src={this.state.mediaPreview || user.photoURL} />
+					<img className="avatar" src={this.state.mediaPreview || user.photoURL} alt="user avatar" />
 					{this.state.mediaPreview
 						? <CircularProgress
 							size={204}

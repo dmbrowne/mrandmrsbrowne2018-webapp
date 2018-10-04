@@ -57,7 +57,7 @@ class NewPost extends React.Component {
 			mediaReference: mediaDocumentReference,
 			caption: this.state.caption,
 			headline: this.state.headline,
-			mediaComplete: this.state.mediaType === 'image',
+			mediaComplete: false,
 		})
 	}
 

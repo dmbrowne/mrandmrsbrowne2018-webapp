@@ -5,11 +5,13 @@ import { withFirebase } from '../firebase';
 const Context = React.createContext({
 	items: [],
 	fetching: false,
+	feedPageLastScrollPos: 0,
 	getItems: () => {},
 	loadMore: () => {},
 	subscribe: () => {},
 	unsubscribe: () => {},
 	onDelete: () => {},
+	setFeedScrollPos: () => {},
 });
 
 type State = {
@@ -27,10 +29,10 @@ class FeedContextProvider extends React.Component<any, State> {
 		feedItems: {},
 		fetching: false,
 		loadingMore: false,
+		feedPageLastScrollPos: 0,
 	}
 
 	updateFeedItemListState(snapshot, merge, mergeState) {
-		const feedItemIds = snapshot.docs.map(doc => doc.id);
 		const docs = snapshot.docs.reduce((accum, doc) => ({
 			ids: [
 				...accum.ids,
@@ -134,17 +136,18 @@ class FeedContextProvider extends React.Component<any, State> {
 	}
 
 	render() {
-		const { Component } = this.props;
 		return (
 			<Context.Provider value={{
 				feed: {
 					items: this.state.feedItemIds.map(id => this.state.feedItems[id]),
 					fetching: this.state.fetching,
+					feedPageLastScrollPos: this.state.feedPageLastScrollPos,
 					getItems: this.getFeedItems,
 					loadMore: this.loadMore,
 					subscribe: this.subscribeToFeedItems,
 					unsubscribe: this.unsubscribeFeedItems,
 					onDelete: this.onDelete,
+					setFeedScrollPos: (yPos) => this.setState({ feedPageLastScrollPos: yPos }),
 				}
 			}}>
 				{this.props.children}

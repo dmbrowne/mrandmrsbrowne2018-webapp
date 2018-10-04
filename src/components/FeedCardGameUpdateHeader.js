@@ -2,10 +2,8 @@ import React from 'react';
 import {
 	Typography,
 	Paper,
-	CircularProgress,
 	LinearProgress,
 } from '@material-ui/core';
-import { withFirebase } from '../firebase';
 import { withGames } from '../store/games';
 import { withUsers } from '../store/users';
 import UserAvatar from './UserAvatar';

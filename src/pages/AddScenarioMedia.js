@@ -108,7 +108,7 @@ class ISpyScenario extends React.Component {
 			mediaType: this.state.mediaType === 'video' ? 'video' : 'image',
 			mediaReference: photoOrVideoReference,
 			scenarioReference: this.scenarioFirestoreRef,
-			mediaComplete: this.state.mediaType === 'image',
+			mediaComplete: false,
 		})
 	}
 
@@ -144,7 +144,7 @@ class ISpyScenario extends React.Component {
 								{mediaType === 'video' &&
 									<InlineVideo videoSrc={mediaPreview} onMetaLoaded={this.onVideoLoadedMeta} />
 								}
-								{mediaType === 'image' && <img src={mediaPreview} />}
+								{mediaType === 'image' && <img alt="preview" src={mediaPreview} />}
 							</div>
 						}
 						<MinimalFileUpload value={file} onChange={this.onFileChange}>

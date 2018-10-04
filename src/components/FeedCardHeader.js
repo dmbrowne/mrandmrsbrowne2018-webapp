@@ -50,7 +50,7 @@ class FeedCardHeader extends React.Component {
 					</div>
         )}
 				title={headline}
-        subheader={user && user.displayName || ''}
+        subheader={(user && user.displayName) || ''}
       />
     );
   }

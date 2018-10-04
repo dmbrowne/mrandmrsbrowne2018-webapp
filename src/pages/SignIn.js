@@ -3,7 +3,6 @@ import firebase from 'firebase/app';
 import * as firebaseui from 'firebaseui';
 import 'firebaseui/dist/firebaseui.css';
 import { Typography, CircularProgress } from '@material-ui/core';
-import logo from '../icons/yd-logo.png';
 import { withFirebase } from '../firebase';
 import { generateIdenticon } from '../utils';
 

@@ -1,5 +1,4 @@
 import React from 'react';
-import fscreen from 'fscreen';
 import VideoCamIcon from '@material-ui/icons/Videocam'
 import { withFullscreenVideo } from '../hocs/fullscreenVideo'
 
@@ -33,7 +32,6 @@ class FullScreenToggleVideo extends React.Component {
 					src={src}
 					onClick={this.viewFullScreen}
 					muted
-					disabled
 				/>
 				<footer>
 					<VideoCamIcon style={{ color: '#fff' }}/>

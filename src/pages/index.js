@@ -6,7 +6,6 @@ import Feed from './Feed';
 import NewPost from './NewPost';
 import AddScenarioMedia from './AddScenarioMedia';
 import Account from './Account';
-import { withFirebase } from '../firebase';
 import { withAuth } from '../store/auth';
 import Appbar from '../components/AppBar';
 import BottomTabNavigation from '../components/TabNavigation';
@@ -29,6 +28,10 @@ class IndexPage extends React.Component {
 	componentDidMount() {
 		if (this.props.auth.user === null) {
 			this.props.history.push("/signin");
+			return null;
+		}
+		if (!this.props.auth.user.displayName) {
+			this.props.history.push("/me");
 			return null;
 		}
 	}
@@ -131,7 +134,10 @@ class IndexPage extends React.Component {
 						bottom: 0;
 					}
 					main {
+						margin-left: auto;
+						margin-right: auto;
 						margin-top: 56px;
+						max-width: 760px;
 					}
 				`}</style>
 			</div>

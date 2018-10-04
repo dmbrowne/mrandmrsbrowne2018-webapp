@@ -17,8 +17,19 @@ class InlineVideo extends React.Component {
 	videoElement = this.props.videoRef;
 	fullscreenButton = React.createRef();
 
-	setPlayVideoState = () => this.setState({ videoPlaying: true });
-	setPauseVideoState = () => this.setState({ videoPlaying: false });
+	constructor(props) {
+		super(props);
+		this.setPlayVideoState = this.setPlayVideoState.bind(this);
+		this.setPauseVideoState = this.setPauseVideoState.bind(this);
+	}
+
+	setPlayVideoState() {
+		this.setState({ videoPlaying: true });
+	}
+
+	setPauseVideoState() {
+		this.setState({ videoPlaying: false });
+	}
 
 	componentDidMount() {
 		setTimeout(this.playOrStopIfInViewport, 1000);

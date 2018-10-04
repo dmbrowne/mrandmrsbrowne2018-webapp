@@ -38,12 +38,24 @@ function Appbar(props) {
 				.app-bar-root :global(.app-bar) {
 					backgroundColor: ${palette.champagne};
 				}
+				.app-bar-root :global(.toolbar) {
+					max-width: 760px;
+					width:100%;
+    			margin: auto;
+				}
 				.app-name {
 					font-family: 'Great Vibes';
 					color ${palette.dark};
 					font-size: 24px;
-					flex-grow: 1;
-					margin-top: 5px;
+					text-align: center;
+
+					position: absolute;
+					width: 191px;
+					left: calc(50% - 95.5px);
+					top: 0;
+					height: 100%;
+					display: flex;
+					align-items: center;
 				}
 				`}</style>
 		</div>

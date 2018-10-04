@@ -2,7 +2,6 @@ import * as Identicon from 'identicon.js';
 
 export function generateIdenticon(hash) {
 	var data = new Identicon(hash, {size: 420, format: 'svg'}).toString(true);
-	return data;
 	return `data:image/svg+xml;utf8,${data}`;
 }
 

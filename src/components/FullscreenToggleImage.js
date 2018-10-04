@@ -9,6 +9,11 @@ export default class FullScreenToggleImage extends React.Component {
 		fullscreen: false,
 	}
 
+	constructor(props) {
+		super(props);
+		this.onFullscreenChange = this.onFullscreenChange.bind(this);
+	}
+
 	componentDidMount() {
 		fscreen.addEventListener('fullscreenchange', this.onFullscreenChange);
 	}
@@ -17,7 +22,7 @@ export default class FullScreenToggleImage extends React.Component {
 		fscreen.removeEventListener("fullscreenchange", this.onFullscreenChange);
 	}
 
-	onFullscreenChange = (e) => {
+	onFullscreenChange(e) {
 		if (fscreen.fullscreenElement === null) {
 			this.setState({ fullscreen: null })
 		}
@@ -38,7 +43,7 @@ export default class FullScreenToggleImage extends React.Component {
 		return (
 			<div>
 				<img
-					// onClick={() => this.viewFullScreenImage()}
+					alt="media"
 					src={this.props.thumbSrc}
 				/>
 				{this.props.allowFullscreen && this.props.disableDoubleClick &&

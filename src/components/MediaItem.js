@@ -12,7 +12,6 @@ class MediaItem extends React.Component {
 	}
 	
 	getVideoThumbSrc(mediaDocument) {
-		console.log(this.props.squareThumb)
 		const cloudinaryUrl = 'https://res.cloudinary.com/liquidation/video/upload/';
 		const { cloudinaryPublicId } = mediaDocument;
 		const cropParameter = this.props.squareThumb ? 'ar_1:1,c_crop' : 'ar_5:4,c_crop';
