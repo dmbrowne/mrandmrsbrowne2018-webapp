@@ -43,7 +43,7 @@ export class NetworkProvider extends React.Component {
 		});
 	}
 
-	onAddToHomescreen() {
+	onAddToHomescreen = () => {
 		this.deferredPrompt.prompt();
 		this.deferredPrompt.userChoice
 			.then((choiceResult) => {
@@ -91,7 +91,7 @@ export class NetworkProvider extends React.Component {
 									</div>
 								</div>
 								<footer>
-									<Button color="primary" variant="contained">Add to homescreen</Button>
+									<Button color="primary" variant="contained" onClick={this.onAddToHomescreen}>Add to homescreen</Button>
 								</footer>
 							</Paper>
 						</div>
@@ -103,7 +103,7 @@ export class NetworkProvider extends React.Component {
 							right: 8px;
 							width: 85%;
 							max-width: 600px;
-							z-index: 100%;
+							z-index: 50;
 						}
 						.content {
 							display: flex;
