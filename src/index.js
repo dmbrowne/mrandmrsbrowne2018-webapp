@@ -19,12 +19,24 @@ import { AuthProvider } from './store/auth';
 import { MediaProvider } from './store/media';
 import { UsersProvider } from './store/users';
 import { NetworkProvider } from './store/network';
+import { CommentsProvider } from './store/comments';
+import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
+import { palette } from './style';
+
+const theme = createMuiTheme({
+	palette: {
+		primary: { main: palette.navy }, // Purple and green play nicely together.
+		secondary: { main: palette.gold }, // This is just green.A700 as hex.
+	},
+});
+
 
 const Router = window.matchMedia('(display-mode: standalone)').matches
-    ? HashRouter
-    : BrowserRouter;
+? HashRouter
+: BrowserRouter;
 
 const WrappedApp = () => (
+	<MuiThemeProvider theme={theme}>
 	<Router>
 		<NetworkProvider>
 			<FirebaseContext.Provider value={{
@@ -39,9 +51,11 @@ const WrappedApp = () => (
 					<UsersProvider>
 						<GamesProvider>
 							<FeedProvider>
-								<MediaProvider>
-									<App />
-								</MediaProvider>
+								<CommentsProvider>
+									<MediaProvider>
+											<App />
+									</MediaProvider>
+								</CommentsProvider>
 							</FeedProvider>
 						</GamesProvider>
 					</UsersProvider>
@@ -49,6 +63,7 @@ const WrappedApp = () => (
 			</FirebaseContext.Provider>
 		</NetworkProvider>
 	</Router>
+	</MuiThemeProvider>
 )
 
 

@@ -1,14 +1,17 @@
 import React from 'react';
-import { Route } from 'react-router-dom';
+import { Route, Switch } from 'react-router-dom';
 import ISpy from './ISpy';
 import ISpyScenario from './ISpyScenario';
 import Feed from './Feed';
 import NewPost from './NewPost';
 import AddScenarioMedia from './AddScenarioMedia';
 import Account from './Account';
+import PostComments from './PostComments';
 import { withAuth } from '../store/auth';
 import Appbar from '../components/AppBar';
 import BottomTabNavigation from '../components/TabNavigation';
+import FullPageMedia from './FullPageMedia';
+import PageTransition from 'react-router-page-transition';
 
 class IndexPage extends React.Component {
 	static tabs = [
@@ -22,10 +25,16 @@ class IndexPage extends React.Component {
 		nextComponent: null,
 		onBack: null,
 		hideNavigationTabs: false,
-		currentTab: IndexPage.tabs.indexOf(this.props.location.pathname),
+		currentTab: IndexPage.tabs.indexOf(this.props.location.pathname) ||
+			this.props.location.pathname.includes('/i-spy') && 1
+		,
 	}
 
 	componentDidMount() {
+		if (window.isUpdateAvailable) {
+			window.isUpdateAvailable();
+		}
+
 		if (this.props.auth.user === null) {
 			this.props.history.push("/signin");
 			return null;
@@ -43,8 +52,13 @@ class IndexPage extends React.Component {
 
 	componentWillUpdate(nextProps) {
 		if (this.props.location.pathname !== nextProps.location.pathname) {
-			this.setState({ appBarTitle: 'Mr. & Mrs. Browne', nextComponent: null, onBack: null })
+			this.setState({ appBarTitle: 'Mr & Mrs Browne', nextComponent: null, onBack: null })
+			if (!this.props.auth.user.displayName) {
+				this.props.history.push("/me");
+				return null;
+			}
 		}
+
 	}
 
 	componentDidUpdate(prevProps, prevState) {
@@ -88,9 +102,18 @@ class IndexPage extends React.Component {
 				/>
 				<main>
 					<Route
-						exact
-						path={'/'}
+						exact path={'/'}
 						render={props => <Feed {...props} appActions={appActions} />}
+					/>
+					<Route
+						exact
+						path={'/media/:mediaType/:id'}
+						render={props => <FullPageMedia {...props} appActions={appActions} />}
+					/>
+					<Route
+						exact
+						path={'/feed/:postId/comments'}
+						render={props => <PostComments {...props} appActions={appActions} />}
 					/>
 					<Route
 						path={'/new-post'}

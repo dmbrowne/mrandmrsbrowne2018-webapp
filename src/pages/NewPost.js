@@ -1,63 +1,49 @@
 import React from 'react';
-import { Typography, Button, TextField, withTheme, Paper } from '@material-ui/core';
+import { Typography, Button, TextField, withTheme } from '@material-ui/core';
 import CameraIcon from '@material-ui/icons/Camera';
-import WarningIcon from '@material-ui/icons/Warning';
 import * as uuidv4 from 'uuid/v4';
 import MinimalFileUpload from '../components/FileUploadMinimal';
 import { withFirebase } from '../firebase';
 import { withAuth } from '../store/auth';
 import { withMedia } from '../store/media';
 import InlineVideo from '../components/InlineVideo';
+import { withNetwork } from '../store/network';
+import moment from 'moment';
 
 
 class NewPost extends React.Component {
 	state = {
 		headline: '',
 		caption: '',
-		mediaPreview: null,
-		file: (this.props.location.state && this.props.location.state.file) || null,
-		mediaType: (this.props.location.state && this.props.location.state.mediaType) || null,
-		videoMeta: {},
+		time: moment(),
+		files: (this.props.location.state && this.props.location.state.files) || null,
 	}
 
 	componentWillMount() {
-		this.validate();
-	}
-
-	componentDidUpdate(prevProps, prevState) {
-		if (this.state.file !== prevState.file) {
-			this.validate();
-		}
-	}
-
-	validate() {
-		if (this.state.mediaType !== 'video') {
-			this.showNextButton();
-		} else if (this.state.videoMeta && this.state.videoMeta.duration <= 60) {
-			this.showNextButton();
-		} else {
-			this.showNextButton(false);
-		}
+		this.showNextButton();
 	}
 
 	showNextButton(show = true) {
 		this.props.appActions.setAppBarNext(
 			show ? {
 				text: 'Post',
-				onClick: () => this.createNewPost(),
+				onClick: () => this.create(),
 			}
 			: null
 		)
 	}
 
 	createFeedPost(mediaDocumentReference) {
+		let date = this.state.time;
+		date = date.year(2018).month(9).date(13)
 		this.props.firestore.collection('feed').add({
 			userId: this.props.auth.user.uid,
-			mediaType: this.state.mediaType === 'image' ? 'image' : 'video',
+			// mediaType: this.state.mediaType === 'image' ? 'image' : 'video',
 			mediaReference: mediaDocumentReference,
+			multiple: Array.isArray(mediaDocumentReference) && mediaDocumentReference.length > 1,
 			caption: this.state.caption,
 			headline: this.state.headline,
-			mediaComplete: false,
+			takenAt: date.toDate(),
 		})
 	}
 
@@ -70,27 +56,76 @@ class NewPost extends React.Component {
 		});
 	}
 
-	createNewPost = () => {
-		const storageReference = uuidv4().split('-').join('');
-		const collection = this.state.mediaType.includes('video') ? 'videos' : 'photos';
-		const mediaDocumentReference = this.props.firestore.collection(collection).doc();
-		this.props.media.uploadFile({
-			ref: storageReference,
-			headline: this.state.headline,
-			caption: this.state.caption,
-			mediaPreview: this.state.mediaPreview,
-			isVideo: this.state.mediaType.includes('video'),
-		}, this.state.file);
-		Promise.all([
-			this.createPhotoOrVideoDocument(mediaDocumentReference, storageReference),
-			this.createFeedPost(mediaDocumentReference),
-		])
-		.then(() => this.props.history.replace('/'));
+	create = () => {
+		if (this.props.network.online) {
+			this.createNewPost().then(success => {
+				if (success) {
+					this.props.media.showUploadStatus();
+					this.props.history.replace({
+						pathname: '/',
+						state: { 
+							refresh: true,
+						}
+					});
+				}
+			});
+		} else {
+			this.props.network.showOfflineSnackMessage(
+				'You can\'t post new content whilst offline, try again once online'
+			)
+		}
 	}
 
-	onFileChange = (file, mediaType, mediaPreview) => {
+	createNewPost() {
+		if (this.state.createPostInProgress) {
+			return Promise.resolve(false);
+		}
+
+		return new Promise((resolve, reject) => {
+			this.setState({
+				createPostInProgress: true,
+			}, () => {
+				if (this.state.createPostInProgress) {
+					const mediaReferences = this.state.files.map(file => {
+						const storageReference = uuidv4().split('-').join('');
+						const collection = file.mediaType.includes('video') ? 'videos' : 'photos';
+						const mediaDocumentReference = this.props.firestore.collection(collection).doc();
+						this.props.media.uploadFile({
+							ref: storageReference,
+							headline: this.state.headline,
+							caption: this.state.caption,
+							mediaPreview: file.mediaPreview,
+							isVideo: file.mediaType.includes('video'),
+							mediaDocumentReference,
+						}, file.file);
+						return { mediaDocumentReference, storageReference };
+					})
+					Promise.all([
+						...mediaReferences.map(({ mediaDocumentReference, storageReference }) => (
+							this.createPhotoOrVideoDocument(mediaDocumentReference, storageReference)
+						)),
+						this.createFeedPost(
+							mediaReferences.map(({ mediaDocumentReference }) => mediaDocumentReference),
+						)
+					])
+					.then(() => resolve(true))
+					.catch(e => reject(e));
+				}
+			})
+		})
+	}
+
+	onFileChange = (idx, file, mediaType, mediaPreview) => {
 		if (file) {
-			this.setState({ file, mediaType, mediaPreview });
+			this.setState(state => {
+				const files = [...state.files];
+				files[idx] = {
+					file,
+					mediaType,
+					mediaPreview,
+				};
+				return {files}
+			});
 		}
 	}
 
@@ -108,71 +143,62 @@ class NewPost extends React.Component {
 		}
 	}
 
-	onVideoLoadedMeta = (metadata) => {
-		this.setState({ videoMeta: metadata }, () => {
-			this.validate()
-		})
-	}
-
 	render() {
-		const { file, mediaType, mediaPreview, videoMeta } = this.state
+		const { file, mediaType, mediaPreview } = this.state
+
 		return (
 			<div className="root">
 				<div className="content">
-					<div className="head-row">
-						<div className="preview-container">
-							{!!mediaPreview &&
-								<div className="media-preview">
-									{mediaType === 'video' &&
-										<InlineVideo videoSrc={mediaPreview} onMetaLoaded={this.onVideoLoadedMeta} />
-									}
-									{mediaType === 'image' && <img alt="new post preview" src={mediaPreview} />}
-								</div>
-							}
-							<MinimalFileUpload value={file} onChange={this.onFileChange}>
-								<Button variant="text" color="primary" size="small">
-									<Typography color="inherit">Retake</Typography>{' '}
-									<CameraIcon style={{ fontSize: 16 }}/>
-								</Button>
-							</MinimalFileUpload>
-						</div>
-						<div className="headline-input-container">
-							<TextField
-								onFocus={e => this.setState({headlineFocus: true})}
-								onBlur={e => this.setState({headlineFocus: false})}
-								placeholder="headline"
-								helperText={
-									this.state.headlineFocus
-										? `80 Characters - ${80 - this.state.headline.length} remaining`
-										: "optional"
-								}
-								fullWidth
-								value={this.state.headline}
-								onChange={this.onHeadlineChange}
-								margin="dense"
-								multiline
-							/>
-						</div>
-					</div>
-					{(mediaType === 'video' && videoMeta && videoMeta.duration > 60) &&
-						<Paper>
-							<WarningIcon />
-							<Typography variant="caption">
-								The video is {Math.ceil(videoMeta.duration)} seconds long, videos are required to be 60 seconds or less.
-								Please trim or retake the video and try again.
-							</Typography>
-						</Paper>
-					}
 					<TextField
+						onFocus={e => this.setState({ headlineFocus: true })}
+						onBlur={e => this.setState({ headlineFocus: false })}
+						placeholder="headline"
+						helperText={
+							this.state.headlineFocus
+								? `80 Characters - ${80 - this.state.headline.length} remaining`
+								: "optional"
+						}
+						fullWidth
+						value={this.state.headline}
+						onChange={this.onHeadlineChange}
+						margin="dense"
+						multiline
+					/>
+					<TextField
+						style={{marginBottom: 24}}
 						label="Caption this"
 						placeholder="caption"
 						helperText="optional"
 						fullWidth
 						value={this.state.caption}
 						onChange={e => this.setState({ caption: e.target.value })}
-						margin="normal"
+						margin="dense"
 						multiline
 					/>
+					<input
+						style={{ margin: '8px 0 16px'}}
+						type="time"
+						value={moment(this.state.time).format('HH:mm')}
+						onChange={e => this.setState({time: moment(e.target.value, 'HH:mm')})}
+					/>
+					{this.state.files.map((file, idx) => (
+						<div key={file.file.name} className="preview-container">
+							{!!file.mediaPreview &&
+								<div className="media-preview">
+									{file.mediaType === 'video' &&
+										<InlineVideo videoSrc={file.mediaPreview} />
+									}
+									{file.mediaType === 'image' && <img alt="new post preview" src={file.mediaPreview} />}
+								</div>
+							}
+							<MinimalFileUpload value={file.file} onChange={(...args) => this.onFileChange(idx, ...args)}>
+								<Button variant="text" color="primary" size="small">
+									<Typography color="inherit">Retake</Typography>{' '}
+									<CameraIcon style={{ fontSize: 16 }}/>
+								</Button>
+							</MinimalFileUpload>
+						</div>
+					))}
 				</div>
 				<style jsx>{`
 					.root {
@@ -181,16 +207,15 @@ class NewPost extends React.Component {
 						position: relative;
 						overflow: auto;
 					}
+					.preview-container {
+						text-align: center;
+					}
 					.media-preview img, video {
 						width: 100%;
 					}
 					.head-row {
 						display: flex;
 						margin-bottom: 8px;
-					}
-					.preview-container {
-						width: 30%;
-						text-align: center;
 					}
 					.headline-input-container {
 						padding-left: 16px;
@@ -214,7 +239,9 @@ class NewPost extends React.Component {
 export default withTheme()(
 	withFirebase(
 		withAuth(
-			withMedia(NewPost)
+			withMedia(
+				withNetwork(NewPost)
+			)
 		)
 	)
 );

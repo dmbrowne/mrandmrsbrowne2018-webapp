@@ -4,21 +4,35 @@ import { withFeed } from '../store/feed';
 import FeedCard from '../components/FeedCard';
 import NewPostButton from '../components/AddNewPostButton';
 import { debounce } from '../utils'
+import { CircularProgress } from '@material-ui/core';
 
 class Feed extends React.Component {
 	constructor(props) {
 		super(props);
 		this.updateLastKnownScrollPosition = this.updateLastKnownScrollPosition.bind(this);
+		this.state = {
+			showPage: false,
+		}
 	}
 
 	componentDidMount() {
-		if (!this.props.feed.items.length) {
+		const locationState = this.props.location.state;
+
+		if (!this.props.feed.items.length || (locationState && locationState.refresh)) {
 			this.props.feed.getItems().then(() => this.props.feed.subscribe());
 		}
 
-		window.scrollTo({ top: this.props.feed.feedPageLastScrollPos });
-		window.addEventListener('scroll', this.updateLastKnownScrollPosition);
-		window.addEventListener('scroll', debounce(this.loadMoreOnScrollBottom, 200));
+		// HACK :(
+		// =======
+		// When react router loads a route with a lot of data - it takes a few seconds to update
+		// the display. the below hack causes the page to blank, causing it to load instantly.
+		setTimeout(() => {
+			this.setState({ showPage: true }, () => {
+				window.scrollTo({ top: this.props.feed.feedPageLastScrollPos });
+				window.addEventListener('scroll', this.updateLastKnownScrollPosition);
+				window.addEventListener('scroll', debounce(this.loadMoreOnScrollBottom, 100));
+			});
+		});
 	}
 	
 	componentWillUnmount() {
@@ -32,23 +46,18 @@ class Feed extends React.Component {
 	}
 
 	loadMoreOnScrollBottom = () => {
-		if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
-			this.props.feed.loadMore().then(() => {
-				window.scrollTo({
-					top: window.scrollY + 200,
-					behavior: 'smooth',
-				});
-			});
+		const thirdOfPage = document.body.offsetHeight / 3
+		if ((window.innerHeight + thirdOfPage) + window.scrollY >= document.body.offsetHeight) {
+			this.props.feed.loadMore();
 		}
 	}
 
-	onAddFile = (file, mediaType) => {
+	onAddFile = (files) => {
+		console.log(files)
 		this.props.history.push({
 			pathname: '/new-post',
 			state: {
-				file,
-				mediaType,
-				hideNavigationTabs: true,
+				files,
 			}
 		})
 	}
@@ -62,7 +71,7 @@ class Feed extends React.Component {
 	render() {
 		return (
 			<div className="feed" ref={this.feedScroll}>
-				{this.props.feed.items.map(feedItem =>
+				{this.state.showPage && this.props.feed.items.map(feedItem =>
 					<div
 						key={feedItem.id}
 						className={cx('feed-card-container', {
@@ -77,10 +86,19 @@ class Feed extends React.Component {
 					/>
 					</div>
 				)}
+				{this.props.feed.loadingMore &&
+					<div style={{ textAlign: 'center', padding: 24 }}>
+						<CircularProgress />
+					</div>
+				}
 				<div className="add-feed-post-container">
 					<NewPostButton onFileChange={this.onAddFile} />
 				</div>
 				<style jsx>{`
+					.feed {
+						overflow: hidden;
+						width: 100%;
+					}
 					.add-feed-post-container {
 						position: fixed;
 						bottom: 72px;
@@ -90,7 +108,7 @@ class Feed extends React.Component {
 						margin: 32px 24px;
 					}
 					.game-feed-card:first-child {
-						margin-top: 0;
+						margin-top: 16px;
 					}
 				`}</style>
 			</div>

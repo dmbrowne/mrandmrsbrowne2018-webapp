@@ -14,38 +14,57 @@ class UsersProviderComponent extends React.Component {
 		fetchingUsers: {},
 	}
 
+	userFetch = {};
+
+	componentDidMount() {
+		this.props.firebaseAuth.onAuthStateChanged(user => {
+			if (user) {
+				this.props.firestore.doc(`users/${user.uid}`).get().then(doc => {
+					this.setState({
+						usersById: {
+							...this.state.usersById,
+							[user.uid]: {
+								id: doc.id,
+								ref: doc.ref,
+								...doc.data(),
+							}
+						}
+					})
+				})
+			}
+		})
+	}
+
 	fetchUserIfNonExistent = (userId) => {
 		if (!this.state.usersById[userId]) {
 			this.fetchUserById(userId);
 		}
 	}
 
-	fetchUserById = (userId) => new Promise((resolve, reject) => {
-		this.setState(currentState => ({
-			fetchingUsers: {
-				...currentState.fetchingUsers,
-				[userId]: true,
-			}
-		}))
+	fetchUserById = (userId) => {
+		if (this.userFetch[userId]) {
+			return;
+		}
 
-		return this.props.firestore.doc(`users/${userId}`).get()
-		.then(snapshot => {
-			const { id, ref } = snapshot;
-			if (!snapshot.exists) {
-				resolve(null);
-				return;
-			}
-
-			const user = { id, ref, ...snapshot.data() };
-			this.setState({
-				usersById: {
-					...this.state.usersById,
-					[snapshot.id]: user,
+		this.userFetch[userId] = this.props.firestore
+			.doc(`users/${userId}`)
+			.onSnapshot(snapshot => {
+				const { id, ref } = snapshot;
+				if (!snapshot.exists) {
+					return;
 				}
-			}, () => resolve(user))
-		})
-		.catch(reject)
-	})
+				
+				const user = { id, ref, ...snapshot.data() };
+				this.setState(currentState => ({
+					usersById: {
+						...currentState.usersById,
+						[snapshot.id]: user,
+					},
+				}))
+				this.userFetch[userId]();
+				this.userFetch[userId] = null;
+			})
+	}
 
 	render() {
 		return (

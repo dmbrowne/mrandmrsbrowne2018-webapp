@@ -2,8 +2,6 @@ import * as React from 'react';
 import {
 	Typography,
 	IconButton,
-	GridList,
-	GridListTile,
 	GridListTileBar
 } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
@@ -16,6 +14,8 @@ import NewPostButton from '../components/AddNewPostButton';
 import { compose } from '../utils';
 import MediaItem from '../components/MediaItem';
 import PageLoader from '../components/PageLoader';
+import MonitorUploadProgress from '../icons/MonitorLoadingProgress';
+import { palette, fontMap } from '../style';
 
 const styles = {
 	tile: {
@@ -38,6 +38,8 @@ class ISpyScenario extends React.Component {
 		media: null,
 		scenarioMedia: null,
 	}
+
+	windowWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
 
 	scenarioFirestoreRef = this.props.firestore.doc(
 		`games/ispy/scenarios/${this.props.match.params.scenarioId}`
@@ -111,128 +113,176 @@ class ISpyScenario extends React.Component {
 			return <PageLoader />
 		}
 
-		return <div className="ispyScenario">
-			<header>
-				<Typography variant="title">{scenario.title}</Typography>
-				{scenario.description &&
-					<Typography> {scenario.description}</Typography>
-				}
-			</header>
-			<div className="relative-container">
-				<div className="top">
-					<Typography variant="body2">
-						Add up to a total of 3 photos or videos
-					</Typography>
-					<div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-around", overflow: "hidden" }}>
-						{scenarioMedia &&
-							<GridList cellHeight={250} style={{ transform: "translateZ(0)", flexWrap: "nowrap" }} cols={1.5}>
-								{scenarioMedia.map((media, idx) => (
-									<GridListTile key={media.id} className="mediaItemContainer">
-										<MediaItem
-											mediaReference={media.mediaReference}
-											mediaType={media.mediaType}
-											squareThumb
-										/>
-										<GridListTileBar
-											classes={{root: classes.titleBar}}
-											actionIcon={
-												<IconButton onClick={() => this.onDeleteMedia(media.ref)}>
-													<DeleteOutlineIcon className={classes.title} />
-												</IconButton>
-											}
-										/>
-									</GridListTile>
-								))}
-							</GridList>
+		return (
+			<div className="ispyScenario">
+				<div className="scenario-title-container">
+					<Typography variant="title" style={{ fontFamily: fontMap[scenario.font] }}>{scenario.title}</Typography>
+				</div>
+				<div className="relative-container">
+					<div className="top" style={{ height: 400 }}>
+						<div className="info">
+							{scenario.description && <Typography variant="subheading" style={{marginBottom: 8}}>{scenario.description}</Typography>}
+							<Typography variant="caption">
+								Add up to a total of 3 photos or videos
+							</Typography>
+						</div>
+						{!scenarioMedia || !scenarioMedia.length 
+							? (
+								<div className="no-uploaded-media">
+									<MonitorUploadProgress />
+									<Typography variant="caption" style={{ color: palette.gold }}>
+										You haven't added any photos or videos yet, once you have, they will appear here.
+									</Typography>
+								</div>
+							)
+							: (
+								<div style={{ transform: 'translateZ(0)', overflowX: 'auto' }}>
+									<div style={{ display: 'inline-flex', flexWrap: 'nowrap' }}>
+										{scenarioMedia.map((media, idx) => (
+											<div key={media.id} className="mediaItemContainer" style={{ width: 250, height: 250}}>
+												<MediaItem
+													mediaReference={media.mediaReference}
+													mediaType={media.mediaType}
+													squareThumb
+												/>
+												<nav>
+													<GridListTileBar
+														classes={{root: classes.titleBar}}
+														actionIcon={
+															<IconButton onClick={() => this.onDeleteMedia(media.ref)}>
+																<DeleteOutlineIcon className={classes.title} />
+															</IconButton>
+														}
+													/>
+												</nav>
+											</div>
+										))}
+									</div>
+								</div>
+							)
 						}
 					</div>
-				</div>
-				<div className="body">
-					<div className="content-scroll">
-						<Paper elevation={3} className="content">
-							{otherUserScenarioMedia &&
-								<GridList cellHeight={100} cols={4}>
-									{otherUserScenarioMedia.map(scenarioMedia => (
-										<GridListTile
-											classes={{ tile: classes.tile }}
-											className="other-user-media-item"
-											key={scenarioMedia.id}
-										>
-											<MediaItem
-												mediaReference={scenarioMedia.mediaReference}
-												mediaType={scenarioMedia.mediaType}
-												squareThumb
-											/>
-										</GridListTile>
-									))}
-								</GridList>
-							}
-						</Paper>
+					<div className="body">
+						<div className="content-scroll">
+							<Paper elevation={5} className="content">
+								{otherUserScenarioMedia && !!otherUserScenarioMedia.length &&
+									<React.Fragment>
+										<div className="info">
+											<Typography variant="body2">Media by other guests</Typography>
+										</div>
+										<div className="other-user-media">
+											{otherUserScenarioMedia.map(scenarioMedia => (
+												<div
+													className="other-user-media-item"
+													key={scenarioMedia.id}
+												>
+													<MediaItem
+														mediaReference={scenarioMedia.mediaReference}
+														mediaType={scenarioMedia.mediaType}
+														squareThumb
+														noMinHeight
+													/>
+												</div>
+											))}
+										</div>
+									</React.Fragment>
+								}
+							</Paper>
+						</div>
 					</div>
 				</div>
+				<div className="add-scenario-media">
+					<NewPostButton onFileChange={this.onAddFile} />
+				</div>
+				<style jsx>{`
+					.add-scenario-media {
+						position: fixed;
+						bottom: 72px;
+						right: 24px;
+						z-index: 100;
+					}
+				`}</style>
+				<style jsx>{`
+					.ispyScenario {
+						display: flex;
+						flex-direction: column;
+						height: calc(100vh - 112px);
+					}
+					.scenario-title-container {
+						padding: 16px 24px 0;
+						background: #fff;
+					}
+					.info {
+						padding: 16px 24px 8px;
+						background: #fff;
+					}
+					.relative-container {
+						position: relative;
+						overflow: hidden;
+						height: 100%;
+						flex-grow: 1;
+						background: #f4f4f4;
+					}
+					.top {
+						position: absolute;
+						top: 0;
+						left: 0;
+						width: 100%;
+						z-index: 1;
+					}
+					.body {
+						height: 100%;
+						overflow: auto;
+					}
+					.content-scroll {
+						padding-top: 350px;
+						height: 100%;
+					}
+					.content-scroll :global(.content) {
+						position: relative;
+						z-index: 2;
+						background: #fff;
+						min-height: calc(100% + 350px);
+					}
+					.mediaItemContainer,
+					.mediaItemContainer > :global(div) {
+						position: relative;
+					}
+					.mediaItemContainer > nav {
+						width: 100%;
+						height: 48px;
+						position: absolute;
+						bottom: 0;
+					}
+					.other-user-media:after {
+						content: '';
+						display: block;
+						clear: both;
+					}
+					.other-user-media-item {
+						float: left;
+						width: 25%;
+					}
+					.ispyScenario :global(.mediaItemContainer img),
+					.ispyScenario :global(.mediaItemContainer video) {
+						width: 100%;
+					}
+					.action {
+						margin-bottom: 24px;
+					}
+					.no-uploaded-media {
+						text-align: center;
+						padding: 24px 40px 0;
+						opacity: 0.8;
+					}
+					.no-uploaded-media :global(svg) {
+						height: 130px;
+						opacity: 0.8;
+						margin-bottom: 16px;
+					}
+				`}</style>
 			</div>
-			<div className="add-scenario-media">
-				<NewPostButton onFileChange={this.onAddFile} />
-			</div>
-			<style jsx>{`
-				.add-scenario-media {
-					position: fixed;
-					bottom: 72px;
-					right: 24px;
-					z-index: 100;
-				}
-			`}</style>
-			<style jsx>{`
-				video,
-				img {
-					max-width: 100%;
-					max-height: 100%;
-				}
-				.ispyScenario {
-					display: flex;
-					flex-direction: column;
-					height: calc(100vh - 112px);
-				}
-				.relative-container {
-					position: relative;
-					overflow: hidden;
-					height: 100%;
-					flex-grow: 1;
-					background: #f4f4f4;
-				}
-				.top {
-					position: absolute;
-					top: 0;
-					left: 0;
-					width: 100%;
-					z-index: 1;
-				}
-				.body {
-					height: 100%;
-					overflow: auto;
-				}
-				.content-scroll {
-					padding-top: 270px;
-					height: 100%;
-				}
-				.content-scroll :global(.content) {
-					position: relative;
-					z-index: 2;
-					background: #fff;
-					min-height: 100%;
-				}
-				.content-scroll :global(.other-user-media-item img) {
-					width: 130%;
-				}
-				.ispyScenario :global(.mediaItemContainer img),
-				.ispyScenario :global(.mediaItemContainer video) {
-					height: 100%;
-				}
-				.action {
-					margin-bottom: 24px;
-				}
-			`}</style>
-		</div>;
+		);
 	}
 }
 

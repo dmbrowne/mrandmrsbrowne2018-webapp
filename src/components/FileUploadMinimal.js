@@ -15,8 +15,8 @@ class FileUpload extends React.Component {
 
 	componentDidMount() {
 		const { uploadFile } = this.state;
-		if (uploadFile) {
-			this.onFileChange({target: {files: [uploadFile]}})
+		if (uploadFile && uploadFile[0]) {
+			this.onFileChange({target: {files: [uploadFile[0].file] }})
 		}
 	}
 

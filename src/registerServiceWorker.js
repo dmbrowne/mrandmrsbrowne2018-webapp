@@ -52,32 +52,32 @@ export default function register() {
   }
 }
 
-function registerValidSW(swUrl) {
-  window.isUpdateAvailable = function isUpdateAvailable() {
-    return new Promise((resolve, reject) => {
-      navigator.serviceWorker
-        .register(swUrl)
-        .then(registration => {
-          registration.onupdatefound = () => {
-            const installingWorker = registration.installing;
-            installingWorker.onstatechange = () => {
-              if (installingWorker.state === 'installed') {
-                if (navigator.serviceWorker.controller) {
-                  console.log('New content is available; please refresh.');
-                  resolve(true);
-                } else {
-                  console.log('Content is cached for offline use.');
-                  resolve(false);
-                }
+async function registerValidSW(swUrl) {
+  try {
+    const registration = await navigator.serviceWorker.register(swUrl);
+    window.isUpdateAvailable = function isUpdateAvailable() {
+      return new Promise((resolve) => {
+        registration.onupdatefound = () => {
+          const installingWorker = registration.installing;
+          installingWorker.onstatechange = () => {
+            if (installingWorker.state !== 'installed') {
+              return;
+            }
+            if (navigator.serviceWorker.controller) {
+              resolve(true);
+              if (window.confirm('An update is available, press ok to update')) {
+                window.location.reload()
               }
-            };
+            } else {
+              console.log('Content is cached for offline use.');
+              resolve(false);
+            }
           };
-        })
-        .catch(error => {
-          console.error('Error during service worker registration:', error);
-          reject(error)
-        });
-    })
+        };
+      });
+    }
+  } catch (error) {
+    console.error('Error during service worker registration:', error);
   }
 }
 

@@ -4,29 +4,41 @@ import { withAuth } from '../store/auth';
 import { withMedia } from '../store/media';
 import { withFirebase } from '../firebase';
 import {
+	Avatar,
 	Button,
 	CircularProgress,
 	TextField,
 	Typography,
+	List,
+	ListItem,
+	ListSubheader,
+	ListItemAvatar,
+	ListItemText,
+	ListItemSecondaryAction,
+	Card,
+	CardContent,
+	Paper,
+	IconButton,
 } from '@material-ui/core';
+import AutorenewIcon from '@material-ui/icons/Autorenew';
 import CameraIcon from '@material-ui/icons/Camera';
+import CheckIcon from '@material-ui/icons/Check';
+import CloseIcon from '@material-ui/icons/Close';
 import FileUploadMinimal from '../components/FileUploadMinimal';
+import SunnyBeach from '../icons/SunnyBeach';
+import ErrorIcon from '@material-ui/icons/Error';
+import { withStyles } from '@material-ui/core/styles';
+import { palette } from '../style';
 
-class UploadItemHeadline extends React.PureComponent {
-	render() {
-		return (
-			<Typography variant="body2" component="header">{this.props.headline}</Typography>
-		);
-	}
-}
-
-class UploadItemCaption extends React.PureComponent {
-	render() {
-		return (
-			<Typography variant="caption" component="p">{this.props.caption}</Typography>
-		);
-	}
-}
+const styles = theme => ({
+	error: {
+		color: '#fff',
+		padding: 16,
+		backgroundColor: theme.palette.error.dark,
+		display: 'flex',
+		alignItems: 'center',
+	},
+})
 
 class UploadItemMediaPreview extends React.PureComponent {
 	render() {
@@ -40,7 +52,7 @@ class UploadItemMediaPreview extends React.PureComponent {
 
 class Account extends React.Component {
 	state = {
-		displayName: '',
+		displayName: this.props.auth.user.displayName || '',
 		mediaPreview: null,
 		uploadProgress: 0,
 	}
@@ -54,8 +66,8 @@ class Account extends React.Component {
 	}
 
 	updateDisplayName = (e) => {
-		const displayName = e.target.value;
-		this.setState({ displayName }, () => this.updateName())
+		const displayName = e.target.value || '';
+		this.setState({ displayName })
 	}
 
 	updateUserPhoto(photoURL) {
@@ -66,18 +78,20 @@ class Account extends React.Component {
 		])
 	}
 
-	updateName() {
-		clearTimeout(this.nameUpdate)
-    this.nameUpdate = setTimeout(() => {
-			const { auth: { user }, firestore } = this.props;
-			const { displayName } = this.state;
-			firestore.doc(`users/${user.uid}`).update({ displayName });
-			user.updateProfile({ displayName });
-		}, 500)
+	updateName = () => {
+		const { auth: { user }, firestore } = this.props;
+		const { displayName } = this.state;
+		Promise.all([
+			firestore.doc(`users/${user.uid}`).update({ displayName }),
+			user.updateProfile({ displayName }),
+		])
+		.then(() => this.forceUpdate())
 	}
 
-	onInputBlur = () => {
-		this.forceUpdate(() => this.setState({ displayName: '' }));
+	cancelDisplayNameChange = () => {
+		this.setState({
+			displayName: this.props.auth.user.displayName || ''
+		});
 	}
 
 	onFileChange = (file, mediaType, mediaPreview) => {
@@ -105,89 +119,168 @@ class Account extends React.Component {
 	}
 
 	render() {
-		const { auth: { user } } = this.props;
+		const { 
+			classes,
+			auth: { user },
+			media: { uploads, removeUploadFromQueue },
+		} = this.props;
+
 		return (
 			<div className="account">
-				<div className="avatar-container">
-					<img className="avatar" src={this.state.mediaPreview || user.photoURL} alt="user avatar" />
-					{this.state.mediaPreview
-						? <CircularProgress
-							size={204}
-							thickness={2}
-							className="progress"
-							color="secondary"
-							variant="static"
-							value={this.state.uploadProgress}
-							/>
-						: <FileUploadMinimal className="file-upload" onChange={this.onFileChange}>
-							<Button variant="fab" color="primary" mini>
-								<CameraIcon style={{ fontSize: 16 }} />
-							</Button>
-						</FileUploadMinimal>
-					}
-				</div>
-				<div className="name-input-control">
-					<TextField
-						required
-						value={this.state.displayName || user.displayName}
-						onChange={this.updateDisplayName}
-						onBlur={this.onInputBlur}
-						inputProps={{
-							className: 'name-input'
-						}}
-						fullWidth
-					/>
-				</div>
-				{this.props.media.uploads &&
-					<section>
-						<Typography variant="subheading" component="header">Uploads in progress</Typography>
-						{Object.entries(this.props.media.uploads).map(([storageReference, uploadState]) => (
-							<article className="upload-item" key={storageReference}>
-								<figure className="upload-item-preview">
-									<UploadItemMediaPreview
-										src={uploadState.mediaPreview}
-										isVideo={uploadState.isVideo}
-									/>
-								</figure>
-								<main className="upload-item-info">
-									<UploadItemHeadline headline={uploadState.headline} />
-									<UploadItemCaption caption={uploadState.caption} />
-								</main>
-								<CircularProgress
-									size={30}
-									thickness={1}
-									variant="static"
-									color="secondary"
-									value={uploadState.progressPercent}
-								/>
-							</article>
-						))}
-					</section>
+				{!this.props.auth.user.displayName &&
+					<div style={{margin: '24px 16px'}}>
+						<Paper classes={{root: classes.error}}>
+							<ErrorIcon/>
+							<span style={{marginLeft: 8}}>Please enter your name before continuing</span>
+						</Paper>
+					</div>
 				}
-        <Button
-					className="signout-btn"
-					variant="raised"
-					color="secondary"
-					size="large"
-					onClick={this.signOut}
-				>
-          Sign Out
-        </Button>
+				<Card style={{ margin: '24px 16px' }}>
+					<ListSubheader>Your Profile</ListSubheader>
+					<CardContent style={{paddingTop: 0}}>
+						<div
+							className="avatar-container"
+							style={{
+								background: `url(${this.state.mediaPreview || user.photoURL}) no-repeat center/cover`,
+							}}
+						>
+							<img className="avatar" src={this.state.mediaPreview || user.photoURL} alt="user avatar" />
+							{this.state.mediaPreview
+								? <CircularProgress
+									size={204}
+									thickness={2}
+									className="progress"
+									color="secondary"
+									variant="static"
+									value={this.state.uploadProgress}
+									/>
+								: <FileUploadMinimal className="file-upload" onChange={this.onFileChange}>
+									<Button variant="fab" color="primary" mini>
+										<CameraIcon style={{ fontSize: 16 }} />
+									</Button>
+								</FileUploadMinimal>
+							}
+						</div>
+						<div className="name-input-control">
+							<TextField
+								required
+								value={this.state.displayName || user.displayName || ''}
+								onChange={this.updateDisplayName}
+								onBlur={this.onInputBlur}
+								inputProps={{className: 'name-input'}}
+								fullWidth
+								variant="outlined"
+							/>
+							{!!this.state.displayName && (this.state.displayName !== user.displayName) &&
+								<div style={{textAlign: 'center'}}>
+									<IconButton onClick={this.updateName}><CheckIcon/></IconButton>
+									<IconButton onClick={this.cancelDisplayNameChange}><CloseIcon/></IconButton>
+								</div>
+							}
+						</div>
+					</CardContent>
+				</Card>
+				{this.props.auth.user.displayName &&
+					<Card style={{ margin: '24px 16px' }}>
+						<List subheader={<ListSubheader>Uploads in Progress</ListSubheader>}>
+							{(!uploads || !Object.keys(uploads).length) && 
+								<li className="no-uploads">
+									<div>
+										<SunnyBeach />
+										<Typography>All good, there are no uploads in progress.</Typography>
+									</div>
+								</li>
+							}
+							{uploads && Object.entries(uploads).map(([ storageReference, uploadState ]) => (
+								<ListItem key={storageReference}>
+									<ListItemAvatar>
+										<Avatar>
+											<UploadItemMediaPreview
+												src={uploadState.mediaPreview}
+												isVideo={uploadState.isVideo}
+											/>
+										</Avatar>
+									</ListItemAvatar>
+									<ListItemText
+										disableTypography
+										primary={(
+											<Typography noWrap variant="subheading">{uploadState.headline}</Typography>
+										)}
+										secondary={(
+											<Typography noWrap variant="caption">{uploadState.caption || ' '}</Typography>
+										)}
+									/>
+									<ListItemSecondaryAction>
+										<div className="upload-state-container">
+											{(uploadState.progressPercent < 100) &&
+													<React.Fragment>
+														<CircularProgress
+															size={34}
+															thickness={3}
+															variant="static"
+															color="secondary"
+															value={uploadState.progressPercent}
+														/>
+														<div className="upload-counter">{uploadState.progressPercent}%</div>
+													</React.Fragment>
+											}
+											{uploadState.progressPercent === 100 &&
+												this.props.media.documents[uploadState.mediaDocumentReference.id].cloudinary && (
+													this.props.media.documents[uploadState.mediaDocumentReference.id].cloudinary.status === 'pending'
+														? (
+															<React.Fragment>
+																<CircularProgress
+																	size={34}
+																	thickness={3}
+																	color="secondary"
+																/>
+																<div className="upload-counter">converting</div>
+															</React.Fragment>
+														) : (
+															<Button
+																size="small"
+																onClick={() => removeUploadFromQueue(storageReference)}
+																color="primary"
+																style={{ width: 30, height: 30, minHeight: 30 }}
+															>
+																Clear
+															</Button>
+														)
+											)}
+										</div>
+									</ListItemSecondaryAction>
+								</ListItem>
+							))}
+						</List>
+					</Card>
+				}
+				<footer>
+					<Button
+						className="signout-btn"
+						variant="raised"
+						color="secondary"
+						size="small"
+						onClick={this.signOut}
+					>
+						Sign Out
+					</Button>
+				</footer>
 				<style jsx>{`
 					.account {
-						text-align: center;
-						padding: 64px 24px 24px;
+						overflow: hidden;
 					}
 					.avatar {
 						max-width: 100%;
-						border-radius: 50%;
+						opacity: 0;
 					}
 					.avatar-container {
 						position: relative;
 						display: flex;
 						width: 200px;
 						height: 200px;
-						margin: 16px auto 32px;
+						margin: auto;
+						align-items: center;
+						border-radius: 50%;
 					}
 					.avatar-container :global(.file-upload) {
 						position: absolute;
@@ -216,16 +309,35 @@ class Account extends React.Component {
 						display: flex;
 						align-items: center;
 					}
-					.upload-item {
-						display: flex;
+					.no-uploads :global(svg) {
+						filter: grayscale(0.9);
+						width: 150px;
+					}
+					.no-uploads {
 						text-align: center;
+						padding: 16px;
 					}
 					.upload-item-preview {
 						width: 50px;
 						margin: 0 16px 0 0;
 					}
-					.upload-item-info {
-						flex-grow: 1;
+					footer {
+						margin: 24px 16px;
+					}
+					.upload-state-container {
+						position: relative;
+					}
+					.upload-counter {
+						position: absolute;
+						height: 30px;
+						width: 30px;
+						top: 2px;
+						left: 2px;
+						font-size: 0.8rem;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						color: ${palette.gold}
 					}
 				`}</style>
 			</div>
@@ -233,6 +345,8 @@ class Account extends React.Component {
 	}
 }
 
-export default withFirebase(
-	withAuth(withMedia(Account))
+export default withStyles(styles)(
+	withFirebase(
+		withAuth(withMedia(Account))
+	)
 );

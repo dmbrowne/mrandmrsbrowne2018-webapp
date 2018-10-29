@@ -1,24 +1,22 @@
 import React from 'react';
-import Paper from '@material-ui/core/Paper';
-import Dialog from '@material-ui/core/Dialog';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogActions from '@material-ui/core/DialogActions';
-import Zoom from '@material-ui/core/Zoom';
-import Modal from '@material-ui/core/Modal';
-import DAndYLogo from '../icons/y-d_logo-wedding-theme.svg';
-import { Typography, Button } from '@material-ui/core';
+import {Button, Zoom, Snackbar, IconButton } from '@material-ui/core';
+import CloseIcon from '@material-ui/icons/Close';
+import AddToHomeScreenModal from '../components/AddToHomeScreenModal';
+import PWAInstallSuccess from '../components/PWAInstallSuccess';
+import PWAConfirmDismiss from '../components/PWAConfirmDismiss';
 
 const NetworkContext = React.createContext({
 	online: false,
+	showOfflineSnackMessage: () => {},
 });
 
 export class NetworkProvider extends React.Component {
 	state = {
-		online: false,
+		online: navigator.onLine,
 		showPWAInstallMessage: false,
 		installSuccessModal: false,
+		showDismissConfirmation: false,
+		neverShowPWAPromptAgain: false,
 	}
 
 	deferredPrompt = null;
@@ -34,6 +32,10 @@ export class NetworkProvider extends React.Component {
 		}, false);
 
 		window.addEventListener('beforeinstallprompt', (e) => {
+			const hidePWANotification = localStorage.getItem('hidePWANotification');
+			if (hidePWANotification === 'true') {
+				return;
+			}
 			e.preventDefault();
 			this.deferredPrompt = e;
 			this.setState({ showPWAInstallMessage: true });
@@ -52,87 +54,66 @@ export class NetworkProvider extends React.Component {
 		});
 	}
 
-	onDismissCustomAddToHomescreen = () => {
-		if (window.confirm('If you dismiss this prompt, it will not be shown again')) {
-			this.setState({ showPWAInstallMessage: false });
+	dismissAddToHomeScreenNotification = () => {
+		this.setState({
+			showPWAInstallMessage: false,
+			showDismissConfirmation: false,
+		});
+	}
+
+	confirmDismiss = () => {
+		this.setState({ showDismissConfirmation: true })
+		if (this.state.preventFutureNotifications) {
+			localStorage.setItem('hidePWANotification', 'true');
 		}
+	}
+
+	showOfflineSnackMessage = (msg) => {
+		this.setState({ offlineSnackMessage: msg });
 	}
 
 	render() {
 		return (
-			<NetworkContext.Provider value={{online: this.state.online}}>
+			<NetworkContext.Provider value={{
+				online: this.state.online,
+				showOfflineSnackMessage: this.showOfflineSnackMessage,
+			}}>
 				<div id="network-provider">
 					{this.props.children}
-					<Dialog
+					<PWAInstallSuccess
 						open={this.state.installSuccessModal}
 						onClose={() => this.setState({ installSuccessModal: false })}
-					>
-						<DialogTitle>Successfully Installed!</DialogTitle>
-						<DialogContent>
-							<DialogContentText>
-								The app has been installed on your device, please close this page and run the app straight from your phone
-            	</DialogContentText>
-						</DialogContent>
-						<DialogActions>
-							<Button onClick={() => this.setState({ installSuccessModal: false })} color="primary" autoFocus>
-								close
-            	</Button>
-						</DialogActions>
-					</Dialog>
-					<Modal
+					/>
+					<PWAConfirmDismiss
+						open={this.state.showDismissConfirmation}
+						preventFutureNotifications={this.state.neverShowPWAPromptAgain}
+						onClose={() => this.setState({ showDismissConfirmation: false })}
+						onChangeNotificationPrevent={() => this.setState({
+							neverShowPWAPromptAgain: !this.state.neverShowPWAPromptAgain 
+						})}
+						onDismiss={this.dismissAddToHomeScreenNotification}
+					/>
+					<AddToHomeScreenModal
 						open={this.state.showPWAInstallMessage}
-						onClose={this.onDismissCustomAddToHomescreen}
-					>
-						<div className="paper-container">
-							<Zoom in={true}>
-								<Paper style={{ padding: 16 }}>
-									<div className="content">
-										<div className="logo"><img src={DAndYLogo} alt="yasmin and daryl logo" /></div>
-										<div>
-											<Typography variant="title">Mr. & Mrs. Browne 2018</Typography>
-											<Typography variant="caption">
-												We recommend you add this as an app to your phone first before doing anything else.
-											</Typography>
-										</div>
-									</div>
-									<footer>
-										<Button
-											color="primary"
-											variant="text"
-											size="small"
-											onClick={this.onDismissCustomAddToHomescreen}
-										>
-											Dismiss
-										</Button>
-										<Button color="primary" variant="contained" onClick={this.onAddToHomescreen}>Add to homescreen</Button>
-									</footer>
-								</Paper>
-							</Zoom>
-						</div>
-					</Modal>
-					<style jsx>{`
-						.paper-container {
-							position: absolute;
-							bottom: 48px;
-							right: 8px;
-							width: 85%;
-							max-width: 600px;
-							z-index: 1101;
+						onClose={this.confirmDismiss}
+						onDismiss={this.confirmDismiss}
+						onAddToHomescreen={this.onAddToHomescreen}
+					/>
+					<Snackbar
+						anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
+						open={!!this.state.offlineSnackMessage}
+						autoHideDuration={4000}
+						onClose={() => this.setState({offlineSnackMessage: null})}
+						message={this.state.offlineSnackMessage}
+						action={
+							<Button
+								color="secondary"
+								onClick={() => this.setState({ offlineSnackMessage: null })}
+							>
+								Dismiss
+							</Button>
 						}
-						.content {
-							display: flex;
-						}
-						.logo {
-							width: 72px;
-							margin-right: 16px;
-						}
-						footer {
-							margin-top: 16px;
-							text-align: right;
-							display: flex;
-							justify-content: space-between
-						}
-					`}</style>
+					/>
 				</div>
 			</NetworkContext.Provider>
 		)

@@ -1,8 +1,10 @@
 import React from 'react';
 import { Button, Zoom } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
+import { withNetwork } from '../store/network';
 
-export default class AddNewPostButton extends React.Component {
+
+class AddNewPostButton extends React.Component {
 	state = {
 		scrolldirectionIsUp: true,
 	}
@@ -23,8 +25,6 @@ export default class AddNewPostButton extends React.Component {
 	}
 
 	setScrollDirection() {
-		// const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-
 		if (document.body.getBoundingClientRect().top > this.lastScrollTop) {
 			this.setState({ scrolldirectionIsUp: true });
 		} else {
@@ -35,19 +35,51 @@ export default class AddNewPostButton extends React.Component {
 	}
 
 	onFileChange = (e) => {
-		const file = e.target.files[0];
-		const fileType = file.type.split('/')[0];
-		this.props.onFileChange(file, fileType);
+		if (!this.props.network.online) {
+			return;
+		}
+		// const file = e.target.files[0];
+		const fileIterable = Array.from(e.target.files);
+		const files = fileIterable.map(file => {
+			const fileType = file.type.split('/')[0];
+			return {
+				file,
+				fileType,
+				mediaPreview: null,
+			}
+		});
+		this.props.onFileChange(files);
+	}
+
+	showMessageIfOffline = () => {
+		if (!this.props.network.online) {
+			this.props.network.showOfflineSnackMessage('Sorry, you can\'t add new content while offline');
+		}
 	}
 
 	render() {
 		return (
-			<Zoom in={this.state.scrolldirectionIsUp}>
-				<label className="fileInputLabel">
-					<Button variant="fab" color="primary" style={{border: `1px solid rgba(255,255,255,0.2)`}} elevation={5}>
-						<AddIcon />
-					</Button>
-					<input type="file" accept="image/*, video/*" onChange={this.onFileChange} />
+			<Zoom in={true}>
+				<div>
+					{!this.props.network.online &&
+						<div className="offline-click-handler" onClick={this.showMessageIfOffline} />
+					}
+					<label className="fileInputLabel">
+						<Button
+							disabled={!this.props.network.online}
+							variant="fab" color="primary" style={{border: `1px solid rgba(255,255,255,0.2)`}}
+							elevation={5}
+						>
+							<AddIcon />
+						</Button>
+						<input
+							type="file"
+							multiple
+							disabled={!this.props.network.online}
+							accept="image/*, video/*"
+							onChange={this.onFileChange}
+						/>
+					</label>
 					<style jsx>{`
 						.fileInputLabel {
 							position: relative;
@@ -66,9 +98,18 @@ export default class AddNewPostButton extends React.Component {
 							text-align: right;
 							top: 0;
 						}
+						.offline-click-handler {
+							position: absolute;
+							width: 100%;
+							height: 100%;
+							z-index: 50;
+							background: transparent;
+						}
 					`}</style>
-				</label>
+				</div>
 			</Zoom>
 		)
 	}
 }
+
+export default withNetwork(AddNewPostButton);

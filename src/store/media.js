@@ -1,14 +1,17 @@
 import * as React from 'react';
 import { withFirebase } from '../firebase';
 import { withNetwork } from './network';
+import UploadSnackbar from '../components/UploadStatusSnackbox';
 
 const Context = React.createContext({
   documents: {},
   uploads: {},
   subscribeToMediaItem: () => {},
 	uploadFile: () => {},
+	removeUploadFromQueue: () => {},
 	uploadQueueOrder: [],
 	uploadQueue: {},
+	showUploadSnackbar: false,
 });
 
 class MediaProviderComponent extends React.Component {
@@ -17,6 +20,7 @@ class MediaProviderComponent extends React.Component {
 		uploads: {},
 		uploadQueueOrder: [],
 		uploadQueue: {},
+		showUploadSnackbar: false,
 	}
 
 	unsubscribers = {}
@@ -36,7 +40,7 @@ class MediaProviderComponent extends React.Component {
 		})
 	}
 
-	updateUploadState({ref, mediaPreview, headline, caption, isVideo}, progressPercent) {
+	updateUploadState({ref, mediaPreview, headline, caption, isVideo, mediaDocumentReference}, progressPercent) {
 		this.setState(state => ({
 			uploads: {
 				...state.uploads,
@@ -46,6 +50,7 @@ class MediaProviderComponent extends React.Component {
 					caption,
 					isVideo,
 					progressPercent,
+					mediaDocumentReference,
 				}
 			}
 		}))
@@ -54,16 +59,17 @@ class MediaProviderComponent extends React.Component {
 	componentDidUpdate(prevProps) {
 		if (!prevProps.network.online && this.props.network.online) {
 			this.state.uploadQueueOrder.forEach(uploadRef => {
-				const uploadData = this.state.uploadQueue[uploadRef];
-				this.upload(uploadData);
+				const uploadDataArgs = this.state.uploadQueue[uploadRef];
+				this.upload(...uploadDataArgs);
 			})
+			this.setState({ uploadQueueOrder: [], uploadQueue: {} });
 		}
 	}
 
 	attemptUpload = (...args) => {
 		const [{ref}] = args
 		const { uploadQueueOrder } = this.state;
-		
+
 		if (!this.props.network.online) {
 			this.setState({
 				uploadQueueOrder: uploadQueueOrder.includes(ref)
@@ -81,33 +87,40 @@ class MediaProviderComponent extends React.Component {
 	
 	upload = ({ ref, ...uploadStatusArgs }, file, meta, track = true) => {
 		const args = meta ? [file, meta] : [file];
+		const { mediaDocumentReference } = uploadStatusArgs;
+		if (mediaDocumentReference) {
+			this.subscribeToMediaItem(mediaDocumentReference);
+		}
 		const uploadItemInfo = { ref, ...uploadStatusArgs };
 		const uploadTask = this.props.firebaseStorage.ref().child(ref).put(...args);
 
 		if (track) {
 			uploadTask.on('state_changed', (snapshot) => {
-				const progressPercent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+				const progressPercent = Math.ceil(
+					(snapshot.bytesTransferred / snapshot.totalBytes) * 100
+				);
 				switch (snapshot.state) {
 					case 'paused':
 						return this.updateUploadState(uploadItemInfo, 'paused');
-					case 'running': {
-						const uploadState = this.state.uploads[ref];
-						if (uploadState && uploadState.progressPercent === 100) return;
+					case 'running': 
 						return this.updateUploadState(uploadItemInfo, progressPercent);
-					}
 					default:
 						break;
 				}
 			}, (error) =>  this.updateUploadState(uploadItemInfo, 'error'));
-
-			uploadTask.then(() => {
-				const newState = {...this.state};
-				delete newState[ref];
-				this.setState(newState);
-			});
 		}
-
+		
 		return uploadTask;
+	}
+	
+	removeUploadFromQueue = (ref) => {
+		const newUploadsMap = {...this.state.uploads};
+		delete newUploadsMap[ref];
+		this.setState({ uploads: newUploadsMap });
+	}
+
+	showUploadStatus = () => {
+		this.setState({ showUploadSnackbar: true });
 	}
 
 	render() {
@@ -117,9 +130,14 @@ class MediaProviderComponent extends React.Component {
 				subscribeToMediaItem: this.subscribeToMediaItem,
 				uploads: this.state.uploads,
 				uploadFile: this.attemptUpload,
-				queuedUploads: this.state.uploadQueueOrder.map(ref => this.state.queuedUploads[ref]),
+				queuedUploads: this.state.uploadQueueOrder.map(ref => this.state.uploadQueue[ref]),
+				removeUploadFromQueue: this.removeUploadFromQueue,
+				showUploadStatus: this.showUploadStatus,
 			}}>
-				{this.props.children}
+				<div>
+					{this.props.children}
+					<UploadSnackbar isOpen={this.state.showUploadSnackbar} onClose={() => this.setState({ showUploadSnackbar: false })} />
+				</div>
 			</Context.Provider>
 		)
 	}

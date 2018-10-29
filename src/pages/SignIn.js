@@ -3,40 +3,48 @@ import 'firebaseui/dist/firebaseui.css';
 import { Typography, CircularProgress } from '@material-ui/core';
 import { withFirebase } from '../firebase';
 import { generateIdenticon } from '../utils';
-
+import { palette } from '../style';
 
 class SignIn extends React.Component {
 	state = {
 		loading: true
 	}
 
+	async updateUser(authResult) {
+		const { additionalUserInfo, user } = authResult
+		const { displayName, email, photoURL, uid } = user
+		const avatar = photoURL || generateIdenticon(uid);
+
+		if (!photoURL) {
+			await user.updateProfile({ photoURL: avatar });
+		}
+
+		if (additionalUserInfo.isNewUser) {
+			await this.props.firestore.doc(`users/${uid}`).set({
+				email,
+				photoURL: avatar,
+				displayName,
+			});
+		}
+
+		return true;
+	}
+
 	uiConfig = {
+		signInFlow: 'popup',
+		signInSuccessUrl: '/',
 		callbacks: {
-			signInSuccessWithAuthResult: async (authResult, redirectUrl) => {
-				const { additionalUserInfo, user } = authResult
-				const { displayName, email, photoURL, uid } = user
-
-				const avatar = photoURL || generateIdenticon(uid);
-
-				if (!photoURL) {
-					user.updateProfile({ photoURL: avatar });
-				}
-
-				if (additionalUserInfo.isNewUser) {
-					await this.props.firestore.doc(`users/${uid}`).set({
-						email,
-						photoURL: avatar,
-						displayName,
-					})
-				}
-	      this.props.history.push('/');
+			signInSuccessWithAuthResult: (authResult, redirectUrl) => {
+				this.setState({ loading: true });
+				this.updateUser(authResult).then(() => {
+					this.props.history.replace('/');
+				})
 	      return false;
     	},
 			uiShown: () => {
 				this.setState({ loading: false })
 			}
 		},
-		signInSuccessUrl: '',
 		signInOptions: [
 			this.props.firebase.auth.GoogleAuthProvider.PROVIDER_ID,
 			this.props.firebase.auth.FacebookAuthProvider.PROVIDER_ID,
@@ -56,13 +64,20 @@ class SignIn extends React.Component {
 		return (
 			<div className="sign-in-root">
         <div className="content">
-          <div id="firebaseui-auth-container" />
-					<section>
-						<Typography component="p" className="body">
-							Thanks for downloading the app, sign in below and join in the fun for our special day.
-						</Typography>
-					</section>
-          {this.state.loading && <CircularProgress />}
+					<h1 className="app-name">Y & D Browne 2018</h1>
+					<div>
+						<div id="firebaseui-auth-container" />
+						<section>
+							{this.state.loading
+								? <CircularProgress />
+								: (
+									<Typography component="p" className="body">
+										Thanks for downloading the app, sign in below and join in the fun for our special day.
+									</Typography>
+								)
+							}
+						</section>
+					</div>
         </div>
         <style jsx>{`
           .sign-in-root {
@@ -76,11 +91,14 @@ class SignIn extends React.Component {
             z-index: 1;
 						text-align: center;
 						overflow: hidden;
-						height: 40%;
-						min-height: 400px;
+						height: 100%;
+						width: 100%;
+						display: flex;
+						flex-direction: column;
+						justify-content: space-between;
           }
 					section {
-						height: 50vh;
+						height: 35vh;
 						background: rgba(255,255,255,0.6);
 						margin-top: -106px;
 						padding: 80px 32px 16px;
@@ -94,6 +112,15 @@ class SignIn extends React.Component {
 					}
 					:global(#firebaseui-auth-container) {
 						margin: 40px 16px 32px;
+					}
+					.app-name {
+						font-family: 'Great Vibes';
+						color ${palette.champagne};
+						text-shadow: 1px 1px 4px ${palette.gold};
+						height: 25vh;
+						display: flex;
+						align-items: center;
+						justify-content: center;
 					}
 				`}</style>
       </div>

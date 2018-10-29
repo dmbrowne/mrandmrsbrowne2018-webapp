@@ -1,52 +1,25 @@
 import React from 'react';
-import fscreen from 'fscreen';
 import FullscreenIcon from '@material-ui/icons/Fullscreen';
-import FullScreenImage from './FullscreenImage';
-import { IconButton } from '@material-ui/core';
+import { IconButton, Fade } from '@material-ui/core';
 
 export default class FullScreenToggleImage extends React.Component {
-	state = {
-		fullscreen: false,
-	}
-
-	constructor(props) {
-		super(props);
-		this.onFullscreenChange = this.onFullscreenChange.bind(this);
-	}
-
-	componentDidMount() {
-		fscreen.addEventListener('fullscreenchange', this.onFullscreenChange);
-	}
-
-	componentWillUnmount() {
-		fscreen.removeEventListener("fullscreenchange", this.onFullscreenChange);
-	}
-
-	onFullscreenChange(e) {
-		if (fscreen.fullscreenElement === null) {
-			this.setState({ fullscreen: null })
-		}
-	}
-
   viewFullScreenImage = (force) => {
 		if (this.props.disableImageClick && !force) {
 			return;
 		}
-    this.setState({ fullscreen: true });
+		this.props.onViewFullScreen();
 	}
 
 	render() {
-		if (this.state.fullscreen) {
-			return <FullScreenImage src={this.props.imgSrc} />
-		}
-
 		return (
 			<div>
-				<img
-					alt="media"
-					src={this.props.thumbSrc}
-					onClick={() => this.viewFullScreenImage()}
-				/>
+				<Fade in={true} timeout={500} mountOnEnter unmountOnExit>
+					<img
+						alt="media"
+						src={this.props.thumbSrc}
+						onClick={() => this.viewFullScreenImage()}
+					/>
+				</Fade>
 				{this.props.allowFullscreen && this.props.disableImageClick &&
 					<IconButton className="fullscreen-button" onClick={() => this.viewFullScreenImage(true)}>
 						<FullscreenIcon />
@@ -55,6 +28,7 @@ export default class FullScreenToggleImage extends React.Component {
 				<style jsx>{`
 					div {
 						position: relative;
+						font-size: 0;
 					}
 					div :global(.fullscreen-button) {
 						position: absolute;

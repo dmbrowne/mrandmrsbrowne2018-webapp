@@ -1,8 +1,8 @@
 import * as Identicon from 'identicon.js';
 
 export function generateIdenticon(hash) {
-	var data = new Identicon(hash, {size: 420, format: 'svg'}).toString(true);
-	return `data:image/svg+xml;utf8,${data}`;
+	var data = new Identicon(hash, { size: 420, format: 'svg' }).toString();
+	return `data:image/svg+xml;base64,${data}`;
 }
 
 export function debounce(func, delay) {
@@ -49,26 +49,7 @@ export function getRandomIntInclusive(min, max) {
 	return Math.floor(Math.random() * (max - min)) + min;
 }
 
-
-export function* fontSequentialiser() {
-	const fonts = [
-		'Bungee Inline',
-		'Fredricka the Great',
-		'Handlee',
-		'Indie Flower',
-		'Monoton',
-		'Montserrat',
-		'Shrikhand',
-		'Spirax',
-		'Yellowtail',
-	];
-	let counter = 0;
-
-	while(true) {
-		yield fonts[counter];
-		counter += 1;
-		if (counter + 1 === fonts.length) {
-			counter = 0;
-		}
-	}
+export function getAspectRatioHeight({width, height}, elementWidth) {
+	elementWidth = elementWidth || (document.documentElement.clientWidth, window.innerWidth);
+	return (elementWidth / width) * height;
 }

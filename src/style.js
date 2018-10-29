@@ -5,3 +5,15 @@ export const palette = {
 	dark: '#11100C',
 	grey: '#C1BDB2',
 }
+
+export const fontMap = {
+	bungee: 'Bungee Inline',
+	fredricka: 'Fredricka the Great',
+	handlee: 'Handlee',
+	indie: 'Indie Flower',
+	monoton: 'Monoton',
+	montserrat: 'Montserrat',
+	shrikhand: 'Shrikhand',
+	spirax: 'Spirax',
+	yellowtail: 'Yellowtail',
+};

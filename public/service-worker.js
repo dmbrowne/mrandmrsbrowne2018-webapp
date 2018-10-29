@@ -1,22 +1,24 @@
-const cacheName = 'v2:static';
+const cacheName = 'v8:static';
 
 self.addEventListener('install', function (e) {
 	// Once the service worker is installed, go ahead and fetch the resources to make this work offline.
 	e.waitUntil(
 		caches.open(cacheName).then(function (cache) {
 			return cache.addAll([
-				'./build/index.html',
-				'./build/assets/greatvibes-regular.ttf',
-				'./build/assets/pacifico-regular.ttf',
-				'./build/assets/BungeeInline-Regular.ttf',
-				'./build/assets/FrederickatheGreat-Regular.ttf',
-				'./build/assets/Handlee-Regular.ttf',
-				'./build/assets/IndieFlower.ttf',
-				'./build/assets/Monoton-Regular.ttf',
-				'./build/assets/Montserrat-Regular.ttf',
-				'./build/assets/Shrikhand-Regular.ttf',
-				'./build/assets/Spirax-Regular.ttf',
-				'./build/assets/Yellowtail-Regular.ttf',
+				'./index.html',
+				'./assets/greatvibes-regular.ttf',
+				'./assets/pacifico-regular.ttf',
+				'./assets/BungeeInline-Regular.ttf',
+				'./assets/FrederickatheGreat-Regular.ttf',
+				'./assets/Handlee-Regular.ttf',
+				'./assets/IndieFlower.ttf',
+				'./assets/Monoton-Regular.ttf',
+				'./assets/Montserrat-Regular.ttf',
+				'./assets/Shrikhand-Regular.ttf',
+				'./assets/Spirax-Regular.ttf',
+				'./assets/Yellowtail-Regular.ttf',
+				'./assets/pace.min.js',
+				'./assets/pace-theme-osx.css',
 			]).then(function () {
 				self.skipWaiting();
 			});

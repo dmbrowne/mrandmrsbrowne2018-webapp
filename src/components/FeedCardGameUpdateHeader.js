@@ -19,13 +19,15 @@ class FeedCardGameUpdate extends React.Component {
 		const { games, gameRef } = this.props;
 		const game = games.gamesById[gameRef.id];
 		if (!game) {
-			games.getGame(gameRef.id);
-			games.getGameScenarios(gameRef.id);
+			// games.getGame(gameRef.id);
+			// games.getGameScenarios(gameRef.id);
+			games.fetchScenario(gameRef.id, this.props.scenarioRef.id);
 		}
 	}
 
 	render() {
 		const { mediaType, userId, gameRef, scenarioRef, users, games, scenarios, className, ...rootProps } = this.props;
+		const mediaNiceName = mediaType === 'image' ? 'photo' : mediaType;
 		const user = users.usersById[userId];
 		const game = games.gamesById[gameRef.id];
 		const scenario = games.scenariosById[scenarioRef.id];
@@ -36,10 +38,10 @@ class FeedCardGameUpdate extends React.Component {
 			>
 				{<UserAvatar user={user}/>}
 				<Paper className="content">
-					{game && user && scenario
+					{user && scenario
 						? <Typography variant="caption" style={{ color: palette.gold }}>
 							<span className="username"><strong>{user.displayName}</strong></span> posted a{' '}
-							<em>{mediaType}</em> for <strong>{scenario.title}</strong> as part of the <strong><em>{game.title}</em></strong> game.
+							<em>{mediaNiceName}</em> for <strong>{scenario.title}</strong>.
 						</Typography>
 						: <LinearProgress color="secondary" variant="query" />
 					}

@@ -8,9 +8,11 @@ import { withFirebase } from '../firebase';
 import { withAuth } from '../store/auth';
 import MinimalFileUpload from '../components/FileUploadMinimal';
 import InlineVideo from '../components/InlineVideo';
+import { withNetwork } from '../store/network';
 
 class ISpyScenario extends React.Component {
 	state = {
+		createPostInProgress: false,
 		scenario: null,
 		caption: '',
 		mediaPreview: null,
@@ -34,17 +36,13 @@ class ISpyScenario extends React.Component {
 	}
 
 	validate() {
-		if (this.state.mediaType !== 'video') {
-			this.showNextButton();
-		} else if (this.state.videoMeta && this.state.videoMeta.duration <= 60) {
-			this.showNextButton();
-		}
+		this.showNextButton();
 	}
 
 	showNextButton() {
 		this.props.appActions.setAppBarNext({
 			text: 'Post',
-			onClick: () => this.createNewPost(),
+			onClick: () => this.fullCreate(),
 		})
 	}
 
@@ -54,26 +52,52 @@ class ISpyScenario extends React.Component {
 		if (!scenario) {
 			this.props.games.fetchScenario('ispy', scenarioId);
 		}
-		this.props.games.fetchScenarioMediaByOtherUsers('ispy', scenarioId, this.props.auth.user.uid);
+	}
+
+	fullCreate() {
+		if (this.props.network.online) {
+			this.create().then(success => {
+				if (success) {
+					this.props.media.showUploadStatus();
+					this.props.history.goBack();
+				}
+			})
+		} else {
+			this.props.network.showOfflineSnackMessage(
+				'You can\'t post new content whilst offline, try again once online'
+			)
+		}
 	}
 
 	create() {
-		const storageReference = uuidv4().split('-').join('');
-		const collection = this.state.mediaType.includes('video') ? 'videos' : 'photos';
-		const mediaDocumentReference = this.props.firestore.collection(collection).doc();
-		this.props.media.uploadFile({
-			ref: storageReference,
-			headline: this.getScenario().title,
-			caption: this.state.caption,
-			mediaPreview: this.state.mediaPreview,
-			isVideo: this.state.mediaType.includes('video'),
-		}, this.state.file);
-		return Promise.all([
-			this.createPhotoOrVideoDocument(mediaDocumentReference, storageReference),
-			this.createGameScenarioMedia(mediaDocumentReference),
-			this.addNewFeedPost(mediaDocumentReference),
-		])
-		.then(() => this.props.history.goBack());
+		if (this.state.createPostInProgress) {
+			return Promise.resolve(false)
+		}
+
+		return new Promise((resolve, reject) => {
+			this.setState({
+				createPostInProgress: true,
+			}, () => {
+				if (this.state.createPostInProgress) {
+					const storageReference = uuidv4().split('-').join('');
+					const collection = this.state.mediaType.includes('video') ? 'videos' : 'photos';
+					const mediaDocumentReference = this.props.firestore.collection(collection).doc();
+					this.props.media.uploadFile({
+						ref: storageReference,
+						headline: this.getScenario().title,
+						caption: this.state.caption,
+						mediaPreview: this.state.mediaPreview,
+						isVideo: this.state.mediaType.includes('video'),
+						mediaDocumentReference,
+					}, this.state.file);
+					Promise.all([
+						this.createPhotoOrVideoDocument(mediaDocumentReference, storageReference),
+						this.createGameScenarioMedia(mediaDocumentReference),
+						this.addNewFeedPost(mediaDocumentReference),
+					]).then(resolve)
+				}
+			});
+		});
 	}
 
 	createPhotoOrVideoDocument(mediaDocumentReference, storageReferencePath) {
@@ -106,7 +130,7 @@ class ISpyScenario extends React.Component {
 			userId: this.props.auth.user.uid,
 			caption: this.state.caption,
 			mediaType: this.state.mediaType === 'video' ? 'video' : 'image',
-			mediaReference: photoOrVideoReference,
+			mediaReference: [photoOrVideoReference],
 			scenarioReference: this.scenarioFirestoreRef,
 			mediaComplete: false,
 		})
@@ -168,12 +192,15 @@ class ISpyScenario extends React.Component {
 				<style jsx>{`
 					.add-scenario-media-root {
 						position: relative;
+						padding: 16px 24px;
 					}
 					.media-preview img, video {
 						width: 100%;
 					}
 					.preview-container {
 						text-align: center;
+						width: 70%;
+						margin: 32px auto 24px;
 					}
 					.controls {
 						position: absolute;
@@ -190,4 +217,4 @@ class ISpyScenario extends React.Component {
 	}
 }
 
-export default withGames(withAuth(withMedia(withFirebase(ISpyScenario))));
+export default withNetwork(withGames(withAuth(withMedia(withFirebase(ISpyScenario)))));

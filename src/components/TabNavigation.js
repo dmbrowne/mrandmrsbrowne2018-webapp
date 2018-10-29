@@ -32,7 +32,7 @@ export default function BottomTabNavigation(props) {
 			<style jsx>{`
 				:global(.bottom-tab-navigation) {
 					background: ${palette.champagne};
-					border-top: 1px solid ${palette.gold};
+					border-top: 1px solid ${palette.navy};
 				}
 			`}</style>
 		</div>
