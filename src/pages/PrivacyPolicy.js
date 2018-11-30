@@ -2,7 +2,7 @@ import React from 'react'
 
 export default function privacyPolicy() {
 	return (
-		<div>
+		<div style={{ padding: '1em' }}>
 			<h1>Privacy Policy</h1>
 
 			<p>Effective date: November 26, 2018</p>

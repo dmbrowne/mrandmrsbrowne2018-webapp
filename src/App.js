@@ -19,15 +19,15 @@ function isRunningOnMobile() {
 
 class App extends Component {
   render() {
-    return
+    return (
       <Switch>
         <Route exact path="/admin" component={Admin} />
-        <Route exact path="/games/configure/ispy" component={ConfigureISpy} />
         <Route exact path="/signin" component={SignIn} />
         <Route exact path="/terms" component={TermsOfService} />
         <Route exact path="/privacy" component={PrivacyPolicy} />
         <Route path="/" component={IndexPage} />
-      </Switch>;
+      </Switch>
+    );
   }
 }
 

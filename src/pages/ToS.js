@@ -2,7 +2,7 @@ import React from "react";
 
 export default function ToS() {
   return (
-    <div>
+    <div style={{padding: '1em' }}>
       <h1>Terms of Service ("Terms")</h1>
       <p>Last updated: 30/11/2018</p>
       <p>
