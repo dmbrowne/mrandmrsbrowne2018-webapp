@@ -10,9 +10,6 @@ class Feed extends React.Component {
 	constructor(props) {
 		super(props);
 		this.updateLastKnownScrollPosition = this.updateLastKnownScrollPosition.bind(this);
-		this.state = {
-			showPage: false,
-		}
 	}
 
 	componentDidMount() {
@@ -27,11 +24,9 @@ class Feed extends React.Component {
 		// When react router loads a route with a lot of data - it takes a few seconds to update
 		// the display. the below hack causes the page to blank, causing it to load instantly.
 		setTimeout(() => {
-			this.setState({ showPage: true }, () => {
 				window.scrollTo({ top: this.props.feed.feedPageLastScrollPos });
 				window.addEventListener('scroll', this.updateLastKnownScrollPosition);
 				window.addEventListener('scroll', debounce(this.loadMoreOnScrollBottom, 100));
-			});
 		});
 	}
 	
@@ -53,7 +48,6 @@ class Feed extends React.Component {
 	}
 
 	onAddFile = (files) => {
-		console.log(files)
 		this.props.history.push({
 			pathname: '/new-post',
 			state: {
@@ -71,21 +65,17 @@ class Feed extends React.Component {
 	render() {
 		return (
 			<div className="feed" ref={this.feedScroll}>
-				{this.state.showPage && this.props.feed.items.map(feedItem =>
-					<div
-						key={feedItem.id}
-						className={cx('feed-card-container', {
-							'game-feed-card': feedItem.gameReference
-						})}
-					>
-					<FeedCard
-						{...feedItem}
-						reference={feedItem.ref}
-						ref={undefined}
-						onDelete={() => this.confirmDelete(feedItem)}
-					/>
-					</div>
-				)}
+				{this.props.feed.items.map(feedItem => {
+					const { ref, ...item } = feedItem;
+					return (
+						<div
+							key={feedItem.id}
+							className={cx('feed-card-container', { 'game-feed-card': feedItem.gameReference })}
+						>
+							<FeedCard {...item} onDelete={() => this.confirmDelete(feedItem)} />
+						</div>
+					)
+				})}
 				{this.props.feed.loadingMore &&
 					<div style={{ textAlign: 'center', padding: 24 }}>
 						<CircularProgress />
