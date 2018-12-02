@@ -32,11 +32,10 @@ class MediaItem extends React.Component {
 	mediaItem = React.createRef();
 
   componentDidMount() {
-		setTimeout(() => 
-			this.setMediaItemContainerHeight()
-		, 500)
-		const { mediaReference } = this.props;
-		this.props.media.subscribeToMediaItem(mediaReference);
+		// setTimeout(() => 
+		// 	this.setMediaItemContainerHeight()
+		// , 500)
+		this.props.media.subscribeToMediaItem(this.props.mediaId);
 	}
 
 	setMediaItemContainerHeight() {
@@ -48,9 +47,8 @@ class MediaItem extends React.Component {
 	}
 
 	getMediaType() {
-		return this.props.mediaReference.path.includes('video')
-			? 'video'
-			: 'image';
+		const mediaDocument = this.props.media.documents[this.props.mediaId];
+		return mediaDocument && mediaDocument.mediaType || null;
 	}
 	
 	getVideoImgThumbSrc(mediaDocument) {
@@ -82,7 +80,8 @@ class MediaItem extends React.Component {
 		const eagerThumb = mediaDocument.cloudinary.eager && mediaDocument.cloudinary.eager[
 			this.props.squareThumb ? 1 : 0
 		];
-		return (eagerThumb && eagerThumb.secure_url) || customStitchedThumbUrl;
+		return mediaDocument.cloudinary.secure_url;
+		// return (eagerThumb && eagerThumb.secure_url) || customStitchedThumbUrl;
 	}
 
 	minHeight(width) {
@@ -102,9 +101,8 @@ class MediaItem extends React.Component {
 	} 
 
 	onViewFullScreen(mediaDocument) {
-		const mediaType = this.getMediaType();
 		this.props.history.push({
-			pathname: `/media/${mediaType}/${mediaDocument.id}`,
+			pathname: `/media/${mediaDocument.mediaType}/${this.props.mediaId}`,
 			state: {
 				hideNavigationTabs: true,
 			}
@@ -116,7 +114,7 @@ class MediaItem extends React.Component {
 			? InlineVideo
 			: FullScreenToggleVideo;
 		
-		return this.getMediaType() === 'video'
+		return mediaDocument.mediaType === 'video'
 			? <Video
 				{...this.props.videoProps}
 				onViewFullScreen={() => this.onViewFullScreen(mediaDocument)}
@@ -131,27 +129,24 @@ class MediaItem extends React.Component {
 
   render() {
 		const { loaderImg, media: {documents}, noMinHeight } = this.props;
-		const mediaDocument = documents[this.props.mediaReference.id];
+		const mediaDocument = documents[this.props.mediaId];
 
 		return (
 			<div ref={this.mediaItem} className="media-item-root" style={{height: this.state.exactHeight}}>
-				{!this.props.loaderImg && (!mediaDocument || !mediaDocument.cloudinary) &&
+				{(!mediaDocument || !mediaDocument.cloudinary) &&
 					<CircularLoader />
 				}
 				{mediaDocument && mediaDocument.cloudinary && (
 					mediaDocument.cloudinary.status === "pending"
-						? mediaDocument.cloudinary.secure_url
-							? this.mediaElement(mediaDocument)
-							: <div className="converting-status">
-									<CircularLoader />
-									Converting...
-								</div>
+						? <div className="converting-status">
+								<CircularLoader />
+								Converting...
+							</div>
 						: this.mediaElement(mediaDocument)
 				)}
 				<style jsx>{`
 					.media-item-root {
 						background: ${loaderImg ? `url(${loaderImg}) no-repeat center/cover` : 'none'};
-						height: ${noMinHeight ? '0' : this.minHeight()}px;
 						transition: height 300ms
 					}
 					.converting-status {

@@ -4,7 +4,7 @@ import { withNetwork } from './network';
 import UploadSnackbar from '../components/UploadStatusSnackbox';
 
 const Context = React.createContext({
-  documents: {},
+  mediaItems: {},
   uploads: {},
   subscribeToMediaItem: () => {},
 	uploadFile: () => {},
@@ -16,7 +16,7 @@ const Context = React.createContext({
 
 class MediaProviderComponent extends React.Component {
 	state = {
-		documents: {},
+		mediaItems: {},
 		uploads: {},
 		uploadQueueOrder: [],
 		uploadQueue: {},
@@ -24,19 +24,21 @@ class MediaProviderComponent extends React.Component {
 	}
 
 	unsubscribers = {}
+	mediaRef = this.props.firestore.collection('media');
 
-	subscribeToMediaItem = (mediaRef) => {
-		if (this.unsubscribers[mediaRef.id]) {
+	subscribeToMediaItem = (mediaId) => {
+		if (this.unsubscribers[mediaId]) {
 			return;
 		}
-		this.unsubscribers[mediaRef.id] = mediaRef.onSnapshot(snapshot => {
+
+		this.unsubscribers[mediaId] = this.mediaRef.doc(mediaId).onSnapshot(snapshot => {
 			const { id, ref } = snapshot;
-			this.setState({
-				documents: {
-					...this.state.documents,
-					[id]: { id, ref, ...snapshot.data() }
+			this.setState(state => ({
+				mediaItems: {
+					...state.mediaItems,
+					[id]: { id, ref, ...snapshot.data() },
 				}
-			})
+			}))
 		})
 	}
 
@@ -126,7 +128,7 @@ class MediaProviderComponent extends React.Component {
 	render() {
 		return (
 			<Context.Provider value={{
-				documents: this.state.documents,
+				documents: this.state.mediaItems,
 				subscribeToMediaItem: this.subscribeToMediaItem,
 				uploads: this.state.uploads,
 				uploadFile: this.attemptUpload,
