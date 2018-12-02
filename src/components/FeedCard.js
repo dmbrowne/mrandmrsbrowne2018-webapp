@@ -9,6 +9,7 @@ import {
 import FavoriteIcon from '@material-ui/icons/Favorite';
 import FavoriteBorderIcon from '@material-ui/icons/FavoriteBorder';
 import moment from 'moment';
+import cx from 'classnames';
 import FeedCardHeader from './FeedCardHeader';
 import FeedCardGameUpdateHeader from './FeedCardGameUpdateHeader';
 import MediaItem from './MediaItem';
@@ -52,7 +53,7 @@ class FeedCard extends React.Component {
 			: 0;
 		const cardBelongsToAuthUser = this.props.userId === this.props.auth.user.uid;
 		return (
-			<div className={`feedcard${this.props.gameReference ? ' game': ''}`}>
+			<div className={cx('feedcard', { game: !!this.props.gameReference })}>
 				{this.props.gameReference &&
 					<FeedCardGameUpdateHeader
 						userId={this.props.userId}
@@ -66,63 +67,44 @@ class FeedCard extends React.Component {
 				}
 				<Card square={true} className="card">
 					{!this.props.gameReference &&
-							<FeedCardHeader
-								userId={this.props.userId}
-								headline={this.props.headline}
-								onDelete={cardBelongsToAuthUser && this.props.onDelete}
-							/>
+						<FeedCardHeader
+							userId={this.props.userId}
+							headline={this.props.headline}
+							onDelete={cardBelongsToAuthUser && this.props.onDelete}
+						/>
 					}
 				</Card>
 				<div onDoubleClick={this.toggleLike} style={{overflowX: 'auto', overflowY: 'hidden'}}>
-					{Array.isArray(this.props.mediaReference)
-						? ( 
-						<div style={{
-								width: this.props.multiple
-									? (this.windowWidth * 0.8) * this.props.mediaReference.length
-									: '100%',
-							}}>
-							{this.props.mediaReference.map((reference, idx) => (
-								<div
-									key={reference.id}
-									style={{ 
-										width: this.props.multiple ? this.windowWidth * 0.8 : '100%',
-										float: 'left',
-										padding: '0 16px',
+					<div style={{
+						width: this.props.mediaIds.length > 1
+							? (this.windowWidth * 0.8) * this.props.mediaReference.length
+							: '100%',
+					}}>
+						{this.props.mediaIds.map((id, idx) => (
+							<div
+								key={id}
+								style={{ 
+									width: this.props.mediaIds.length > 1 ? this.windowWidth * 0.8 : '100%',
+									float: 'left',
+									padding: '0 16px',
+								}}
+							>
+								<MediaItem
+									mediaId={id}
+									imgProps={{
+										allowFullscreen: true,
+										disableImageClick: true,
 									}}
-								>
-									<MediaItem
-										loaderImg={this.props.loaderImg[idx]}
-										mediaReference={reference}
-										imgProps={{
-											allowFullscreen: true,
-											disableImageClick: true,
-										}}
-										videoProps={{
-											allowFullscreen: true,
-											autoPlayOnScroll: true,
-											showPlayButton: true,
-										}}
-									/>
-								</div>
-							))}
-							<div style={{clear: 'both'}} />
-						</div>
-						) :
-						<div className="card-container">
-							<MediaItem
-								loaderImg={this.props.loaderImg}
-								mediaReference={this.props.mediaReference}
-								imgProps={{
-									allowFullscreen: true,
-									disableImageClick: true,
-								}}
-								videoProps={{
-									allowFullscreen: true,
-									autoPlayOnScroll: true,
-								}}
-							/>
-						</div>
-					}
+									videoProps={{
+										allowFullscreen: true,
+										autoPlayOnScroll: true,
+										showPlayButton: true,
+									}}
+								/>
+							</div>
+						))}
+						<div style={{clear: 'both'}} />
+					</div>
 				</div>
 				<Card className="card">
 					<CardActions

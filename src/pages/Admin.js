@@ -16,12 +16,22 @@ class Admin extends React.Component {
 
 	migrateMedia = () => {
 		this.migrate()
-		.then((res) => {
-			console.log(res);
-		})
-		.catch(err => {
-			console.error(err);
-		})
+			.then((res) => { console.log(res) })
+			.catch(err => { console.error(err) })
+	}
+
+	addMediaIdToFeedItems = () => {
+		this.props.firestore.collection('feed').get().then(snapshot => {
+			return Promise.all(
+				snapshot.docs.map(documentSnapshot => {
+					const { mediaReference } = documentSnapshot.data();
+					const mediaIds = Array.isArray(mediaReference)
+						? mediaReference.map(mediaRef => mediaRef.id)
+						: [mediaReference.id]
+					return documentSnapshot.ref.update({ mediaIds })
+				})
+			);	
+		});
 	}
 
 	render() {
@@ -29,6 +39,7 @@ class Admin extends React.Component {
 			<div>
 				<h1>Admin</h1>
 				<Button variant="contained" onClick={this.migrateMedia}>Migrate</Button>
+				<Button variant="contained" onClick={this.addMediaIdToFeedItems}>Add mediaId to feed items</Button>
 			</div>
 		)
 	}
